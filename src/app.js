@@ -1,0 +1,64 @@
+import express from 'express';
+import bodyParser from 'body-parser';
+import cors from 'cors'; 
+import logger from './middlewares/log.middleware.js';
+import userRouter from "./routes/user/user.routes.js"; 
+import categoryRouter from "./routes/catalog/category/category.routes.js"; 
+import productRouter from "./routes/catalog/product/product.routes.js";  
+import cartRouter from "./routes/cart.routes.js"; 
+import orderRouter from "./routes/order/order.routes.js"; 
+import roleRouter from "./routes/user/role.routes.js"; 
+import paymentRouter from "./routes/payment/payment.routes.js"; 
+import { upload } from './middlewares/multer.middleware.js';
+import { fileUpload } from './fileupload.js';
+import { errorHandler } from './middlewares/error.middleware.js';
+import { requestLogger } from './middlewares/winston.js';
+import { ApiError } from './utils/ApiError.js';
+import { verifyRoute } from './middlewares/route.middleware.js';
+
+const app = express();
+
+app.use(bodyParser.json());
+app.use(cors());
+// app.use(verifyRoute);
+app.use(requestLogger);
+app.use(function(req, res, next) {
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    next();
+});
+
+
+
+app.post('/api/v1/upload', upload.single("image"),fileUpload);
+
+app.use("/api/v1/user", userRouter)
+app.use("/api/v1/category", categoryRouter)
+app.use("/api/v1/product", productRouter)
+app.use("/api/v1/cart", cartRouter)
+app.use("/api/v1/order", orderRouter)
+app.use("/api/v1/role", roleRouter)
+app.use("/api/v1/payment", paymentRouter)
+
+app.get('/api/v1/error', (req, res, next) => {
+    const error = new ApiError(400,'This is a test error');
+    // error.statusCode = 400; // Bad Request
+    next(error);
+});
+
+app.use(errorHandler);
+
+app.get('/api/v1/staff/:id', (req, res) => {
+    console.log(req.route); // Logs route details
+    res.json({
+      routeDetails: req.route,
+    });
+  });
+  
+app.get("/api/v1/",(req, res) => { 
+    res.status(200).json(`Server running on http://localhost:${process.env.PORT}/api/v1/`)
+})
+
+export default app;

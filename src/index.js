@@ -1,14 +1,12 @@
 import connectDb from "./db/index.js";
-import app from "./app.js";
-import dotenv from "dotenv";
+import app from "./app.js"; 
 import { logger } from "./middlewares/winston.js";
-
-dotenv.config({path: './.env'});
+import envConfig from "./env.config.js";
 
 connectDb()
 .then(() => {
-    app.listen(process.env.PORT || 5500, () => {
-        logger.info(`Server is running on http://localhost:${process.env.PORT}/api/v1/`)
+    app.listen( envConfig.PORT, envConfig.HOST, () => {
+        logger.info(`Server is running on http://${envConfig.HOST}:${envConfig.PORT}/api/v1/`)
     })
 })
 .catch((error) => {

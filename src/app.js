@@ -15,6 +15,7 @@ import { errorHandler } from './middlewares/error.middleware.js';
 import { requestLogger } from './middlewares/winston.js';
 import { ApiError } from './utils/ApiError.js';
 import { verifyRoute } from './middlewares/route.middleware.js';
+import envConfig from './env.config.js';
 
 const app = express();
 
@@ -58,7 +59,7 @@ app.get('/api/v1/staff/:id', (req, res) => {
   });
   
 app.get("/api/v1/",(req, res) => { 
-    res.status(200).json(`Server running on http://localhost:${process.env.PORT}/api/v1/`)
+    res.status(200).json(`Server running on http://${envConfig.HOST}:${envConfig.PORT}/api/v1/`)
 })
 
 export default app;

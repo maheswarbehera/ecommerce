@@ -31,18 +31,5 @@ const ApiErrorResponse = (statusCode, message , next) => {
     next(error)
 }
 
-
-
-const ApiErrorMiddleware = (error, req, res, next) => {
-    if (error instanceof ApiError) {
-        return res.status(error.statusCode).json({
-            statusCode: error.statusCode, 
-            message: error.message, 
-            status: error.status,
-        })
-    }
-    next(error)
-}
-
-export { ApiError, ApiErrorResponse, ApiErrorMiddleware }
+export { ApiError, ApiErrorResponse }
   

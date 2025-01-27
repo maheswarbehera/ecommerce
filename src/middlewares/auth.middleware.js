@@ -22,7 +22,7 @@ const verifyJwt = async (req, res, next) => {
         .json({ status: false, message: "Invalid Access Token!" });
     }
 
-    const user = await User.findById(decodedToken?.id).select("-password"); //find user and remove password from response
+    const user = await User.findById(decodedToken?._id).select("-password"); //find user and remove password from response
 
     if (!user) {
       return res

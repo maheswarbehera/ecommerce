@@ -1,10 +1,9 @@
 import { User } from "../../models/user/user.model.js";
-import {Role } from "../../models/user/role.model.js"
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { ApiResponse, ApiSuccessResponse } from "../../utils/ApiResponse.js";
-import { ApiError, ApiErrorResponse } from "../../utils/ApiError.js";
+import { ApiSuccessResponse } from "../../utils/ApiResponse.js";
+import { ApiErrorResponse } from "../../utils/ApiError.js";
+import sendMail from "../../utils/email.js";
+import { logger } from "../../middlewares/winston.js";
 
 const registerUser = async(req, res, next) => {
     const { username, password } = req.body;
@@ -12,17 +11,41 @@ const registerUser = async(req, res, next) => {
         // return res.status(400).json(new ApiError(400, "Username and password are required"));
         return ApiErrorResponse(400, "Username and password are required" , next)
     }
-    const existuser = await User.findOne({username})
-
+    const existuser = await User.findOne({username: username.toLowerCase()}) 
     if(existuser){
         return ApiErrorResponse( 400, "username already exists" , next)
     }
-    const hashedPassword = await bcrypt.hash(password, 8);
+    // const hashedPassword = await bcrypt.hash(password, 8);
     const user = await User.create({
         username: username.toLowerCase(),
-        password : hashedPassword
+        password 
     })
+    
+    
+    const sendTestEmail = async () => {
+      try {
+        const info = await sendMail({
+          from: 'ffmahesh6@gmail.com',
+          to: "maheswarbehera439@gmail.com",
+          subject: "User Registration Successful",
+          text: "You have successfully registered!",
+          html: "<b>You have successfully registered!</b>",
+        });
+        logger.info(`Email sent successfully , ${info.messageId}`);
+      } catch (error) {
+        logger.error("Failed to send email:", error);
+      }
+    };
+  
+    if (user) {
+      // await sendTestEmail();
+    }
+    
     return ApiSuccessResponse(res, 200, user, "user created successfully")
+    return ApiSuccessResponse(res, 200, user, "user created successfully")
+    // return res.status(200).json( new ApiResponse(200, user, "user created successfully"))
+    // res.status(200).json({user, status: true, message: "user created successfully"})
+    return ApiSuccessResponse(res, 200, user, "user created successfully") 
     // return res.status(200).json( new ApiResponse(200, user, "user created successfully"))
     // res.status(200).json({user, status: true, message: "user created successfully"})
 }
@@ -32,7 +55,7 @@ const loginUser = async(req, res, next) => {
     if(!(username && password)){
       return ApiErrorResponse( 400, "Username and password are required", next)
     }
-    const user = await User.findOne({username})
+    const user = await User.findOne({username: username.toLowerCase()});
     if(!user){
         return res.status(404).json({status: false, message: "User does not exist."})
     }
@@ -42,6 +65,7 @@ const loginUser = async(req, res, next) => {
     //     return res.status(400).json({ status: false, message: "Invalid password." });
     // }
     const isPasswordValid = await user.isPasswordCorrect(password);
+    // console.log(password, user.password, isPasswordValid)
     if (!isPasswordValid) {
       return ApiErrorResponse( 400, "Invalid password", next)
     }
@@ -116,21 +140,11 @@ const allUser = async(req, res) => {
 }
 
 const userRole = async(req, res) => {
-  const {userId} = req.body // Replace with the actual user ID
-
-  // // Find roles created by the user
-  // const roles = await Role.find({ createdBy: userId }).populate("createdBy", "username"); // Populate only the username field;
-  
-  // if (roles.length > 0) {
-  //     console.log("User  Roles:", roles);
-  // } else {
-  //     console.log("No roles found for this user.");
-  // };
-
+  const {userId} = req.body 
 
   const result = await User.aggregate([
     {
-        $match: { _id: new mongoose.Types.ObjectId(userId) } // Match the user by ID
+        $match: { _id: new mongoose.Types.ObjectId(userId) } 
     },
     {
         $lookup: {

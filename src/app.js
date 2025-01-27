@@ -1,7 +1,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors'; 
-import logger from './middlewares/log.middleware.js';
+// import logger from './middlewares/log.middleware.js';
 import userRouter from "./routes/user/user.routes.js"; 
 import categoryRouter from "./routes/catalog/category/category.routes.js"; 
 import productRouter from "./routes/catalog/product/product.routes.js";  
@@ -12,16 +12,13 @@ import paymentRouter from "./routes/payment/payment.routes.js";
 import { upload } from './middlewares/multer.middleware.js';
 import { fileUpload } from './fileupload.js';
 import { errorHandler } from './middlewares/error.middleware.js';
-import { requestLogger } from './middlewares/winston.js';
+import { logger, requestLogger } from './middlewares/winston.js';
 import { ApiError } from './utils/ApiError.js';
-import { verifyRoute } from './middlewares/route.middleware.js';
 import envConfig from './env.config.js';
 
 const app = express();
-
 app.use(bodyParser.json());
 app.use(cors());
-// app.use(verifyRoute);
 app.use(requestLogger);
 app.use(function(req, res, next) {
     res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
@@ -61,5 +58,12 @@ app.get('/api/v1/staff/:id', (req, res) => {
 app.get("/api/v1/",(req, res) => { 
     res.status(200).json(`Server running on http://${envConfig.HOST}:${envConfig.PORT}/api/v1/`)
 })
+
+app.all('*', (req, res) => {
+  logger.warn(`No route matched: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ status: false, message: `Route not found: ${req.method} ${req.originalUrl}` });
+});
+
+app.use(errorHandler);
 
 export default app;

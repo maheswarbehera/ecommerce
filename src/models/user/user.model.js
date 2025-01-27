@@ -6,6 +6,7 @@ const userSchema = new Schema({
     username: {
         type: String,
         required: true,
+        unique: true,
         trim: true
     },
     password: {
@@ -13,11 +14,11 @@ const userSchema = new Schema({
         required: true,
         trim: true
     },
-    role: [{
-        type: Schema.Types.ObjectId,
-        ref: 'Role',
-        required: true
-    }]
+    // role: [{
+    //     type: Schema.Types.ObjectId,
+    //     ref: 'Role',
+    //     required: true
+    // }]
     // cart: [
     //     {
     //         product: {

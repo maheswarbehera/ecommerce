@@ -15,8 +15,15 @@ import { errorHandler } from './middlewares/error.middleware.js';
 import { logger, requestLogger } from './middlewares/winston.js';
 import { ApiError } from './utils/ApiError.js';
 import envConfig from './env.config.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 app.use(bodyParser.json());
 app.use(cors());
 app.use(requestLogger);
@@ -58,6 +65,9 @@ app.get('/api/v1/staff/:id', (req, res) => {
 app.get("/api/v1/",(req, res) => { 
     res.status(200).json(`Server running on http://${envConfig.HOST}:${envConfig.PORT}/api/v1/`)
 })
+app.get("/api/v1/ssr", (req, res) => {
+  res.render('index', { host: envConfig.HOST, port: envConfig.PORT });
+});
 
 app.all('*', (req, res) => {
   logger.warn(`No route matched: ${req.method} ${req.originalUrl}`);

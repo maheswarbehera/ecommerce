@@ -14,7 +14,11 @@ const envConfig = {
 
     CLOUDINARY_CLOUD_NAME : process.env.CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_API_KEY : process.env.CLOUDINARY_API_KEY,
-    CLOUDINARY_API_SECRET_KEY : process.env.CLOUDINARY_API_SECRET_KEY
+    CLOUDINARY_API_SECRET_KEY : process.env.CLOUDINARY_API_SECRET_KEY,
+
+    EMAIL_SERVICE: process.env.EMAIL_SERVICE,
+    EMAIL_USER: process.env.EMAIL_USER,
+    EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,
 }
 
 export default envConfig;

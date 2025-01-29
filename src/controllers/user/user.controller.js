@@ -2,52 +2,50 @@ import { User } from "../../models/user/user.model.js";
 import mongoose from "mongoose";
 import { ApiSuccessResponse } from "../../utils/ApiResponse.js";
 import { ApiErrorResponse } from "../../utils/ApiError.js";
-import sendMail from "../../utils/email.js";
+import {sendMail} from "../../utils/email.js";
 import { logger } from "../../middlewares/winston.js";
 
 const registerUser = async(req, res, next) => {
-    const { username, password } = req.body;
-    if(!(username && password)){
+    const { username, email, password } = req.body;
+    if(!(username && password && email)){
         // return res.status(400).json(new ApiError(400, "Username and password are required"));
-        return ApiErrorResponse(400, "Username and password are required" , next)
+        return ApiErrorResponse(400, "All fields are required" , next)
     }
-    const existuser = await User.findOne({username: username.toLowerCase()}) 
+    const existuser = await User.findOne({
+      $or: [{username: username.toLowerCase()}, {email: email.toLowerCase()}]}) 
     if(existuser){
         return ApiErrorResponse( 400, "username already exists" , next)
     }
     // const hashedPassword = await bcrypt.hash(password, 8);
     const user = await User.create({
         username: username.toLowerCase(),
-        password 
+        password,
+        email: email.toLowerCase()
     })
     
     
-    const sendTestEmail = async () => {
-      try {
-        const info = await sendMail({
-          from: 'ffmahesh6@gmail.com',
-          to: "maheswarbehera439@gmail.com",
-          subject: "User Registration Successful",
-          text: "You have successfully registered!",
-          html: "<b>You have successfully registered!</b>",
-        });
-        logger.info(`Email sent successfully , ${info.messageId}`);
-      } catch (error) {
-        logger.error("Failed to send email:", error);
-      }
-    };
+    // const sendTestEmail = async (email) => {
+    //   try {
+    //     const info = await sendMail({
+    //       from: 'ffprakash6@gmail.com',
+    //       to: email,
+    //       subject: "User Registration Successful",
+    //       text: "You have successfully registered!",
+    //       html: `<b>You have successfully registered! </b> 
+    //       <br> <p>Username: ${user.username}</p> `,
+
+    //     });
+    //     logger.info(`Email sent successfully , ${info.messageId}`);
+    //   } catch (error) {
+    //     logger.error("Failed to send email:", error);
+    //   }
+    // };
   
     if (user) {
-      // await sendTestEmail();
+      await sendMail.register(user.email, user.username);
     }
     
     return ApiSuccessResponse(res, 200, user, "user created successfully")
-    return ApiSuccessResponse(res, 200, user, "user created successfully")
-    // return res.status(200).json( new ApiResponse(200, user, "user created successfully"))
-    // res.status(200).json({user, status: true, message: "user created successfully"})
-    return ApiSuccessResponse(res, 200, user, "user created successfully") 
-    // return res.status(200).json( new ApiResponse(200, user, "user created successfully"))
-    // res.status(200).json({user, status: true, message: "user created successfully"})
 }
 
 const loginUser = async(req, res, next) => {

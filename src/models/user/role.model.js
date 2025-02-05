@@ -6,19 +6,12 @@ const roleSchema = new Schema({
         required: true,
         trim: true
     }, 
-    // permissions: [
-    //     {
-    //         type: Schema.Types.ObjectId,
-    //         ref: 'Permission',
-    //         required: true
-    //     }
-    // ],
-    createdBy: {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
-    },
-    
+    permissions: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'Permission',
+            required: true
+        },]
 
 },{
     timestamps: true

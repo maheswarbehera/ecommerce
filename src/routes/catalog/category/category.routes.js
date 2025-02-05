@@ -5,7 +5,9 @@ import { categoryController } from '../../../controllers/catalog/category/catego
 const router = Router()
 
 router.get('/',verifyJwt, categoryController.getAllCategories)
-.post('/create',verifyJwt, categoryController.createCategory)
+.post('/saveOrUpdate',verifyJwt, categoryController.saveOrUpdate)
+.put('/edit/:id',verifyJwt, categoryController.saveOrUpdate)
+.delete('/:id',verifyJwt, categoryController.deleteCategory) 
 .get('/:id',verifyJwt, categoryController.getById)
 
 export default router

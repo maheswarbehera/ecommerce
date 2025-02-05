@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { User } from "../models/user/user.model.js";
+import { Role } from "../models/user/role.model.js";
 const verifyJwt = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");
@@ -23,7 +24,6 @@ const verifyJwt = async (req, res, next) => {
     }
 
     const user = await User.findById(decodedToken?._id).select("-password"); //find user and remove password from response
-
     if (!user) {
       return res
         .status(404)

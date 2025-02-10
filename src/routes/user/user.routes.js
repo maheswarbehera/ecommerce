@@ -1,12 +1,9 @@
 import { Router } from "express"; 
 import mongoose from "mongoose";
-
-// import userController from "../controllers/user/user.controller.js";
 import userController from "../../controllers/user/user.controller.js";
 import verifyJwt from "../../middlewares/auth.middleware.js";  
 
-const router = Router()
-
+const router = Router();
 
 const validateObjectId = (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -25,21 +22,78 @@ const validateObjectId = (req, res, next) => {
 // router.route("/current-user").get(verifyJwt,userController.getCurrentUser)
 
 // Public routes
-router
-    .post('/register', userController.registerUser)
-    .post('/login', userController.loginUser);
+// router
+//     .post('/register', userController.registerUser)
+//     .post('/login', userController.loginUser);
     
     
-    // Protected routes
-router.use(verifyJwt);
+//     // Protected routes
+// router.use(verifyJwt);
 
-router
-    .post('/logout', userController.logoutUser) 
-    .get('/', userController.allUser)
-    .get('/current-user', userController.getCurrentUser)
-    .get('/role', userController.userRole)
-    .get('/:id',validateObjectId, userController.GetById)
+// router
+//     .post('/logout', userController.logoutUser) 
+//     .get('/', userController.allUser)
+//     .get('/current-user', userController.getCurrentUser)
+//     .get('/role', userController.userRole)
+//     .get('/:id',validateObjectId, userController.GetById)
 
 
+    const routes = [
+        // Public routes (no auth required)
+        {
+          method: 'post',
+          path: '/register',
+          handler: userController.registerUser,
+          middlewares: []  
+        },
+        {
+          method: 'post',
+          path: '/login',
+          handler: userController.loginUser,
+          middlewares: []
+        },
+      
+        // Protected routes (JWT required)
+        {
+          method: 'post',
+          path: '/logout',
+          handler: userController.logoutUser,
+          middlewares: [verifyJwt]
+        },
+        {
+          method: 'get',
+          path: '/',
+          handler: userController.allUser,
+          middlewares: [verifyJwt]
+        },
+        {
+          method: 'get',
+          path: '/current-user',
+          handler: userController.getCurrentUser,
+          middlewares: [verifyJwt]
+        },
+        {
+          method: 'get',
+          path: '/role',
+          handler: userController.userRole,
+          middlewares: [verifyJwt]
+        },
+        {
+          method: 'get',
+          path: '/id/:id',
+          handler: userController.GetById,
+          middlewares: [verifyJwt, validateObjectId]  
+        },
+    ];
+      
+    routes.forEach(route => {
+    if (route.middlewares && route.middlewares.length) {
+        router[route.method](route.path, ...route.middlewares, route.handler); 
+        // console.warn(`Registering middleware route: ${route.method.toUpperCase()} ${route.path}`);
+    } else {
+        router[route.method](route.path, route.handler); 
+        // console.warn(`Registering route: ${route.method.toUpperCase()} ${route.path}`);
+    }
+    });
 
 export default router

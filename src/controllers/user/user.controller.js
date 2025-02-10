@@ -79,7 +79,9 @@ const loginUser = async(req, res, next) => {
 
     res.header("Authorization", accessToken)
     // .cookie("accessToken", accessToken)
-   
+    user.logNum += 1
+    user.lastLogin = Date.now()
+    await user.save()
     // .status(200).json({user: user,accessToken, status: true, message: "User Login Successfull"})
     return ApiSuccessResponse(res, 200,{user, accessToken}, "User Login Successfull")
 }

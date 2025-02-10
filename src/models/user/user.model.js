@@ -24,7 +24,15 @@ const userSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Role',
         // required: true
-    }
+    },
+    logNum: {
+        type: Number,
+        default: 0
+    },
+    lastLogin: {
+        type: Date,
+        default: Date.now
+    },
     // cart: [
     //     {
     //         product: {

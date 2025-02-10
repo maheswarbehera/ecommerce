@@ -1,4 +1,5 @@
 import express from 'express';
+import userAgent from 'express-useragent';
 import bodyParser from 'body-parser';
 import cors from 'cors'; 
 // import logger from './middlewares/log.middleware.js';
@@ -26,6 +27,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(bodyParser.json());
 app.use(cors());
+app.use(userAgent.express());
 app.use(requestLogger);
 app.use(function(req, res, next) {
     res.setHeader('Access-Control-Allow-Origin', envConfig.CORS_ORIGIN);

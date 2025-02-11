@@ -9,6 +9,7 @@ const errorHandler = (err, req, res, next) => {
   const message =  err.message || 'Internal Server Error'; 
   const status = err.status || false; 
   const stack = err.stack || undefined; 
+  const name = err.name || 'Error';
 
   // In development mode, log the stack trace for debugging
   if (envConfig.NODE_ENV === 'development') {
@@ -23,6 +24,7 @@ const errorHandler = (err, req, res, next) => {
       status: status,
       statusCode: statusCode,
       message: message,
+      name: name,
       ...(envConfig.NODE_ENV === 'development' && { stack }),
     });
   }
@@ -32,7 +34,8 @@ const errorHandler = (err, req, res, next) => {
     status,
     statusCode,
     message,
-    ...(process.env.NODE_ENV === 'development' && { stack }), // Include stack trace in development
+    name,
+    ...(envConfig.NODE_ENV === 'development' && { stack }), // Include stack trace in development
   });
 };
 

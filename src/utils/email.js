@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import envConfig from "../env.config.js";
-import { logger } from "../middlewares/winston.js"; 
+import { logger } from "../middlewares/index.js"; 
 
 const transporter = nodemailer.createTransport({
     host: envConfig.EMAIL_SERVICE,

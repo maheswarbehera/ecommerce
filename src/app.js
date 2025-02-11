@@ -2,22 +2,15 @@ import express from 'express';
 import userAgent from 'express-useragent';
 import bodyParser from 'body-parser';
 import cors from 'cors'; 
-import rateLimit from 'express-rate-limit';
-import userRouter from "./routes/user/user.routes.js"; 
-import categoryRouter from "./routes/catalog/category/category.routes.js"; 
-import productRouter from "./routes/catalog/product/product.routes.js";  
-import cartRouter from "./routes/cart.routes.js"; 
-import orderRouter from "./routes/order/order.routes.js"; 
-import roleRouter from "./routes/user/role.routes.js"; 
-import paymentRouter from "./routes/payment/payment.routes.js"; 
-import { upload } from './middlewares/multer.middleware.js';
-import { fileUpload } from './fileupload.js';
-import { errorHandler } from './middlewares/error.middleware.js';
-import { logger, requestLogger } from './middlewares/winston.js';
-import { ApiError, ApiErrorResponse } from './utils/ApiError.js';
-import envConfig from './env.config.js';
+import rateLimit from 'express-rate-limit'; 
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+import sharedRoutes from './routes/index.js';
+import sharedUtils from './utils/index.js';
+import sharedMiddlewares, { logger, requestLogger } from './middlewares/index.js'; 
+import { fileUpload } from './fileupload.js'; 
+import envConfig from './env.config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +18,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-
+app.use(express.json({limit:"10kb"})); 
 app.use(bodyParser.json());
 app.use(cors());
 app.use(userAgent.express());
@@ -38,6 +31,7 @@ app.use(function(req, res, next) {
     next();
 });
 
+const { ApiError, ApiErrorResponse } = sharedUtils;
 const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minutes
   max: envConfig.RATE_LIMIT_MAX, // Limit each IP to 100 requests per windowMs
@@ -52,15 +46,15 @@ const apiLimiter = rateLimit({
 
 app.use('/api/v1', apiLimiter);
 
-app.post('/api/v1/upload', upload.single("image"),fileUpload);
+app.post('/api/v1/upload', sharedMiddlewares.upload.single("image"),fileUpload);
 
-app.use("/api/v1/user", userRouter)
-app.use("/api/v1/category", categoryRouter)
-app.use("/api/v1/product", productRouter)
-app.use("/api/v1/cart", cartRouter)
-app.use("/api/v1/order", orderRouter)
-app.use("/api/v1/role", roleRouter)
-app.use("/api/v1/payment", paymentRouter)
+app.use("/api/v1/user", sharedRoutes.userRouter)
+app.use("/api/v1/category", sharedRoutes.categoryRouter)
+app.use("/api/v1/product", sharedRoutes.productRouter)
+app.use("/api/v1/cart", sharedRoutes.cartRouter)
+app.use("/api/v1/order", sharedRoutes.orderRouter)
+app.use("/api/v1/role", sharedRoutes.roleRouter)
+app.use("/api/v1/payment", sharedRoutes.paymentRouter)
 
 app.get('/api/v1/error', (req, res, next) => {
     const error = new ApiError(400,'This is a test error');
@@ -87,6 +81,6 @@ app.all('*', (req, res) => {
   res.status(404).json({ status: false, message: `Route not found: ${req.method} ${req.originalUrl}` });
 });
 
-app.use(errorHandler);
+app.use(sharedMiddlewares.errorHandler);
 
 export default app;

@@ -1,4 +1,6 @@
-import { Category } from "../../../models/catalog/category/category.model.js";
+import sharedModels from "../../../models/index.js";
+
+const { Category } = sharedModels;
 
 const saveOrUpdate = async (req, res) => {
     try {

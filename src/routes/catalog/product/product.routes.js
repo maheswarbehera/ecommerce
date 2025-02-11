@@ -1,6 +1,6 @@
 import { Router } from 'express' 
-import verifyJwt from '../../../middlewares/auth.middleware.js'
-import { productController } from '../../../controllers/catalog/product/product.controller.js'
+import sharedMiddlewares from "../../../middlewares/index.js"
+import sharedControllers from "../../../controllers/index.js" 
 
 const router = Router()
 
@@ -13,6 +13,8 @@ const router = Router()
 //     .get('/category/:categoryName', productController.getProductByCategory)
 //     .get('/:sku', productController.getById)
 //     .get('/filter', productController.sortProduct);
+const { verifyJwt } = sharedMiddlewares;
+const { productController } = sharedControllers;
 
 const routes = [
     {

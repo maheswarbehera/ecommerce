@@ -1,103 +1,57 @@
-import mongoose from "mongoose";
-import { Permission } from "../../models/user/permission.model.js";
-import { Role } from "../../models/user/role.model.js";
+import sharedUtils from "../../utils/index.js";
+import sharedModels from "../../models/index.js";
 
-const createRole = async (req, res) => {
-    try { 
-        const userRole = req.user.role;  // Adjust based on authentication
+const { Role, Permission } = sharedModels;
+const { ApiSuccessResponse, ApiErrorResponse, asyncHandler } = sharedUtils;
 
-        // Validate role existence
-        if (!mongoose.Types.ObjectId.isValid(userRole)) {
-            return res.status(400).json({ status: false, message: "Invalid user role ID" });
-        }
+const createRole = asyncHandler(async (req, res, next) => {
+    const { permission, roleName } = req.body; 
+    if (!roleName || typeof roleName !== "string") return ApiErrorResponse(422, "Role name is required", next);
+    
+    const exRole = await Role.findOne({ name: roleName.toLowerCase() });
+    if (exRole) return ApiErrorResponse(404, "Role already exists", next); 
+    
+    // Validate permissions
+    const validatedPermission = {
+        read: permission?.read || false,
+        write: permission?.write || false,
+        update: permission?.update || false,
+        delete: permission?.delete || false, // Ensure default value
+    }; 
 
-        const exrole = await Role.findById(userRole);
-        if (!exrole) {
-            return res.status(404).json({ status: false, message: "Role not found" });
-        }
-
-        // Only allow 'admin' to create roles
-        if (exrole.name !== 'admin') {
-            return res.status(403).json({
-                status: false,
-                message: "You do not have permission to create roles. Admin access required."
-            });
-        }
-
-        const { permission, roleName } = req.body;
- 
-        // Validate role name
-        if (!roleName || typeof roleName !== "string") {
-            return res.status(400).json({ status: false, message: "Invalid or missing role name" });
-        }
-
-        // Validate permissions
-        const validatedPermission = {
-            read: permission?.read || false,
-            write: permission?.write || false,
-            update: permission?.update || false,
-            delete: permission?.delete || false, // Ensure default value
-        };
-
-        // Check if the role already exists
-        const existingRole = await Role.findOne({ name: roleName });
-        if (existingRole) {
-            return res.status(400).json({ status: false, message: "Role already exists" });
-        }
-
-        // Check if an identical permission set already exists
-        let existingPermission = await Permission.findOne(validatedPermission);
-        if (!existingPermission) {
-            existingPermission = new Permission(validatedPermission);
-            await existingPermission.save();
-        }
-
-        // Create a new role with associated permissions
-        const newRole = new Role({
-            name: roleName,
-            permissions: [existingPermission._id]
-        });
-
-        await newRole.save();
-
-        res.status(201).json({ role: newRole, status: true, message: "Role and permission created successfully" });
-    } catch (error) {
-        console.error("Error creating role:", error.message);
-        res.status(500).json({ status: false, message: "An error occurred while creating the role" });
+    // Check if permission set already exists
+    let existingPermission = await Permission.findOne(validatedPermission);
+    if (!existingPermission) {
+        existingPermission = new Permission(validatedPermission);
+        await existingPermission.save();
     }
-};
 
-const getRole = async (req, res) => {
-    try {
-        const roles = await Role.find().populate('permissions');
-        res.status(200).json({ roles, status: true, message: "Roles fetched successfully" });
-    } catch (error) {
-        console.error("Error fetching roles:", error.message);
-        res.status(500).json({ status: false, message: "An error occurred while fetching roles" });
-    }
-};
+    // Create a new role with permissions
+    const newRole = new Role({
+        name: roleName.toLowerCase(),
+        permissions: [existingPermission._id]
+    });
 
-const getPermission = async (req, res) => {
-    try {
-        const { roleId } = req.body;
+    await newRole.save();
+    return ApiSuccessResponse(res,201, { role: newRole}, "Role and permission created successfully"); 
+});
 
-        if (!mongoose.Types.ObjectId.isValid(roleId)) {
-            return res.status(400).json({ status: false, message: "Invalid role ID" });
-        }
+const getRole = asyncHandler(async (req, res) => {
+    const roles = await Role.find().populate('permissions');
+    if (!roles) return ApiErrorResponse(404, "Roles not found", next);
+    return ApiSuccessResponse(res, 200, { roles }, "Roles fetched successfully"); 
+});
 
-        const role = await Role.findById(roleId).populate('permissions');
-        if (!role) {
-            return res.status(404).json({ status: false, message: "Role not found" });
-        }
+const getPermission = asyncHandler(async (req, res, next) => {
+    const { id } = req.body;
+    if (!id) return ApiErrorResponse(422, "ID is required", next); 
 
-        res.status(200).json({ role, status: true, message: "Permissions fetched successfully" });
-    } catch (error) {
-        console.error("Error fetching permissions:", error.message);
-        res.status(500).json({ status: false, message: "An error occurred while fetching permissions" });
-    }
-};
+    const role = await Role.findById(id).populate('permissions');
+    if (!role) return ApiErrorResponse(404, "Role not found", next);
+    return ApiSuccessResponse(res, 200, { role }, "Permissions fetched successfully");
+});
 
-export const RoleController = {
+export const roleController = {
     createRole,
     getRole,
     getPermission

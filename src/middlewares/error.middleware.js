@@ -1,7 +1,9 @@
-import envConfig from '../env.config.js';
-import { ApiError } from '../utils/ApiError.js';
-import { logger } from './winston.js';
+import envConfig from '../env.config.js'; 
+import sharedUtils from '../utils/index.js';
+import { logger } from '../middlewares/index.js';
 import os from 'os';
+
+const { ApiError } = sharedUtils;
 
 const errorHandler = (err, req, res, next) => {
   // Default error properties

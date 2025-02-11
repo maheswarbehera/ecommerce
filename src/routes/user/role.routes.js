@@ -1,27 +1,28 @@
 import { Router } from "express" 
-import verifyJwt from "../../middlewares/auth.middleware.js"
-import { RoleController } from "../../controllers/user/role.controller.js"
-
+import sharedMiddlewares from "../../middlewares/index.js"
+import sharedControllers from "../../controllers/index.js" 
 
 const router = Router()
+const { verifyJwt, validateObjectId } = sharedMiddlewares
+const { roleController } = sharedControllers
 
 const routes = [
     {
         method: 'post',
         path: '/create',
-        handler: RoleController.createRole,
+        handler: roleController.createRole,
         middlewares: [verifyJwt]
     },
     {
         method: 'post',
         path: '/permission',
-        handler: RoleController.getPermission,
-        middlewares: [verifyJwt]
+        handler: roleController.getPermission,
+        middlewares: [verifyJwt, validateObjectId]
     },
     {
         method: 'get',
         path: '/',
-        handler: RoleController.getRole,
+        handler: roleController.getRole,
         middlewares: [verifyJwt]
     }
 ]

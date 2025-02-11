@@ -1,5 +1,5 @@
 import mongoose from "mongoose"; 
-import { logger } from "../middlewares/winston.js";
+import { logger } from "../middlewares/index.js";
 import envConfig from "../env.config.js";
 import os from 'os';
 

@@ -1,11 +1,13 @@
-import { Router } from 'express'
-import { orderController } from '../../controllers/order/order.controller.js'
-import verifyJwt from '../../middlewares/auth.middleware.js'
+import { Router } from 'express' 
+import sharedMiddlewares from "../../middlewares/index.js"
+import sharedControllers from "../../controllers/index.js" 
 
 const router =  Router()    
 
 // router.post('/create', verifyJwt, orderController.placeOrder)
 // .get('/', verifyJwt, orderController.getOrders)
+const { verifyJwt } = sharedMiddlewares;
+const { orderController } = sharedControllers;
 
 const routes = [
     {

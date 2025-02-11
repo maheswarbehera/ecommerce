@@ -1,6 +1,6 @@
-import { Category } from "../../../models/catalog/category/category.model.js";
-import { Product } from "../../../models/catalog/product/product.model.js";
+import sharedModels from "../../../models/index.js";
 
+const { Category, Product } = sharedModels;
 const createProduct = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -107,7 +107,7 @@ const getProductByCategory = async (req, res) => {
 }
 
 const getById = async (req, res) => {
-    const { sku } = req.body;
+    const { sku } = req.params;
     try {
         const product = await Product.findOne({sku})
 

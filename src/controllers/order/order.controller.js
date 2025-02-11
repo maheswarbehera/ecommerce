@@ -1,7 +1,6 @@
-import {Order} from '../../models/order/order.model.js';
-import {OrderItem} from '../../models/order/orderItem.model.js';
-import {Product} from '../../models/catalog/product/product.model.js'; 
+import sharedModels from "../../models/index.js";
 
+const { Product, Order, OrderItem } = sharedModels;
 
 // const placeOrder = async (req, res) => {
 //     try {

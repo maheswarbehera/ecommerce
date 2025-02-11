@@ -1,6 +1,6 @@
-import { Router } from 'express' 
-import verifyJwt from '../../../middlewares/auth.middleware.js'
-import { categoryController } from '../../../controllers/catalog/category/category.controller.js'
+import { Router } from 'express'  
+import sharedMiddlewares from "../../../middlewares/index.js"
+import sharedControllers from "../../../controllers/index.js" 
 
 const router = Router()
 
@@ -10,6 +10,8 @@ const router = Router()
 // .delete('/:id',verifyJwt, categoryController.deleteCategory) 
 // .get('/:id',verifyJwt, categoryController.getById)
 
+const { verifyJwt } = sharedMiddlewares;
+const { categoryController } = sharedControllers;
 
 const routes = [
     {

@@ -1,17 +1,8 @@
 import { Router } from "express"; 
-import mongoose from "mongoose";
-import userController from "../../controllers/user/user.controller.js";
-import verifyJwt from "../../middlewares/auth.middleware.js";  
+import sharedMiddlewares from "../../middlewares/index.js"
+import sharedControllers from "../../controllers/index.js" 
 
 const router = Router();
-
-const validateObjectId = (req, res, next) => {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        return res.status(400).json({ message: 'Invalid ID' });
-    }
-    next();
-};
-
 
 // router.route("/register").post(registerUser)
 // router.route("/login").post(loginUser)
@@ -36,7 +27,8 @@ const validateObjectId = (req, res, next) => {
 //     .get('/current-user', userController.getCurrentUser)
 //     .get('/role', userController.userRole)
 //     .get('/:id',validateObjectId, userController.GetById)
-
+const { verifyJwt, validateObjectId } = sharedMiddlewares;
+const { userController } = sharedControllers;
 
     const routes = [
         // Public routes (no auth required)

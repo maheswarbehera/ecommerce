@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
-import { User } from "../models/user/user.model.js";
-import { Role } from "../models/user/role.model.js";
+import sharedModels from "../models/index.js"; 
+
+const { User } = sharedModels;
 const verifyJwt = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");

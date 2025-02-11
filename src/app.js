@@ -39,13 +39,13 @@ app.use(function(req, res, next) {
 });
 
 const apiLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: `Too many requests, please try again after ${5 * 60} seconds`,
+  windowMs: 1 * 60 * 1000, // 1 minutes
+  max: envConfig.RATE_LIMIT_MAX, // Limit each IP to 100 requests per windowMs
+  message: `Too many requests, please try again after ${1 * 60} seconds`,
   statusCode: 429,
   headers: true,
   handler: function (req, res, next) {
-    count
+    logger.warn(`[RateLimit Exceeded] IP: ${req.ip} - [${this.statusCode}] ${req.method} | ${req.originalUrl} | ${this.message}`);
     return ApiErrorResponse(this.statusCode, this.message, next);
   },
 });

@@ -19,6 +19,13 @@ const envConfig = {
     EMAIL_SERVICE: process.env.EMAIL_SERVICE,
     EMAIL_USER: process.env.EMAIL_USER,
     EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,
+
+    RATE_LIMIT_MAX: process.env.RATE_LIMIT_MAX,
+    RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS,
+    RATE_LIMIT_MESSAGE: process.env.RATE_LIMIT_MESSAGE,
+    RATE_LIMIT_STATUS_CODE: process.env.RATE_LIMIT_STATUS_CODE,
+    RATE_LIMIT_HEADERS: process.env.RATE_LIMIT_HEADERS,
+
 }
 
 export default envConfig;

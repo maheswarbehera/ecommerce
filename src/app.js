@@ -2,7 +2,7 @@ import express from 'express';
 import userAgent from 'express-useragent';
 import bodyParser from 'body-parser';
 import cors from 'cors'; 
-// import logger from './middlewares/log.middleware.js';
+import rateLimit from 'express-rate-limit';
 import userRouter from "./routes/user/user.routes.js"; 
 import categoryRouter from "./routes/catalog/category/category.routes.js"; 
 import productRouter from "./routes/catalog/product/product.routes.js";  
@@ -14,7 +14,7 @@ import { upload } from './middlewares/multer.middleware.js';
 import { fileUpload } from './fileupload.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { logger, requestLogger } from './middlewares/winston.js';
-import { ApiError } from './utils/ApiError.js';
+import { ApiError, ApiErrorResponse } from './utils/ApiError.js';
 import envConfig from './env.config.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -25,6 +25,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
 app.use(bodyParser.json());
 app.use(cors());
 app.use(userAgent.express());
@@ -37,7 +38,19 @@ app.use(function(req, res, next) {
     next();
 });
 
+const apiLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: `Too many requests, please try again after ${5 * 60} seconds`,
+  statusCode: 429,
+  headers: true,
+  handler: function (req, res, next) {
+    count
+    return ApiErrorResponse(this.statusCode, this.message, next);
+  },
+});
 
+app.use('/api/v1', apiLimiter);
 
 app.post('/api/v1/upload', upload.single("image"),fileUpload);
 
@@ -54,8 +67,6 @@ app.get('/api/v1/error', (req, res, next) => {
     // error.statusCode = 400; // Bad Request
     next(error);
 });
-
-app.use(errorHandler);
 
 app.get('/api/v1/staff/:id', (req, res) => {
     console.log(req.route); // Logs route details

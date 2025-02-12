@@ -28,7 +28,7 @@ const routes = [
 ]
 
 routes.forEach(route => {
-    if (route.middlewares && route.middlewares.length) {
+    if (route.middlewares && route.middlewares.length > 0) {
         router[route.method](route.path, ...route.middlewares, route.handler)
         // console.warn(`Registering middleware route: ${route.method.toUpperCase()} ${route.path}`)
     } else {

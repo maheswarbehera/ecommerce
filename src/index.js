@@ -7,7 +7,7 @@ import os from 'os';
 connectDb()
 .then(() => {
     app.listen( envConfig.PORT, envConfig.HOST, () => {
-        logger.info(`[${os.hostname}] Server is running on http://${envConfig.HOST}:${envConfig.PORT}/api/v1/`)
+        logger.info(`[${os.hostname}] Server is running on http://${envConfig.HOST}:${envConfig.PORT}${envConfig.BASE_URL}${envConfig.API_VERSION}`);
     })
 })
 .catch((error) => {

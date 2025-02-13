@@ -11,6 +11,7 @@ import sharedUtils from './utils/index.js';
 import sharedMiddlewares, { logger, requestLogger } from './middlewares/index.js'; 
 import { fileUpload } from './fileupload.js'; 
 import envConfig from './env.config.js';
+import { ApiSuccessResponse } from './utils/ApiResponse.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,41 +45,67 @@ const apiLimiter = rateLimit({
   },
 });
 
-app.use('/api/v1', apiLimiter);
+// app.use("/api/v1/user", sharedRoutes.userRouter)
+// app.use("/api/v1/category", sharedRoutes.categoryRouter)
+// app.use("/api/v1/product", sharedRoutes.productRouter)
+// app.use("/api/v1/cart", sharedRoutes.cartRouter)
+// app.use("/api/v1/order", sharedRoutes.orderRouter)
+// app.use("/api/v1/role", sharedRoutes.roleRouter)
+// app.use("/api/v1/payment", sharedRoutes.paymentRouter)
+const urlMapping = `${envConfig.BASE_URL}${envConfig.API_VERSION}`;
+app.use(urlMapping, apiLimiter);
+
+const appRoutes = [
+  { path: "/user", route: sharedRoutes.userRouter },
+  { path: "/category", route: sharedRoutes.categoryRouter },
+  { path: "/product", route: sharedRoutes.productRouter },
+  { path: "/cart", route: sharedRoutes.cartRouter },
+  { path: "/order", route: sharedRoutes.orderRouter },
+  { path: "/role", route: sharedRoutes.roleRouter },
+  { path: "/payment", route: sharedRoutes.paymentRouter },
+];
+
+appRoutes.forEach(({ path, route }) => {
+  app.use(`${urlMapping}${path}`, route);
+}); 
 
 app.post('/api/v1/upload', sharedMiddlewares.upload.single("image"),fileUpload);
+app.get('/api/v1/public/temp/:path', (req, res) => {
+  const { path: requestedPath } = req.params;
+  
+  // Avoid directory traversal by sanitizing the path
+  const sanitizedPath = path.join('public', 'temp', requestedPath);
+  const absolutePath = path.resolve(sanitizedPath);
 
-app.use("/api/v1/user", sharedRoutes.userRouter)
-app.use("/api/v1/category", sharedRoutes.categoryRouter)
-app.use("/api/v1/product", sharedRoutes.productRouter)
-app.use("/api/v1/cart", sharedRoutes.cartRouter)
-app.use("/api/v1/order", sharedRoutes.orderRouter)
-app.use("/api/v1/role", sharedRoutes.roleRouter)
-app.use("/api/v1/payment", sharedRoutes.paymentRouter)
+  // Ensure the path is within the 'public/temp' directory
+  if (!absolutePath.startsWith(path.resolve('public', 'temp'))) {
+    return res.status(400).send('Invalid file path');
+  }
 
+  res
+    .status(200)
+    .sendFile(absolutePath);
+});
+
+
+// Testing api routes
 app.get('/api/v1/error', (req, res, next) => {
     const error = new ApiError(400,'This is a test error');
     // error.statusCode = 400; // Bad Request
     next(error);
 });
 
-app.get('/api/v1/staff/:id', (req, res) => {
-    console.log(req.route); // Logs route details
-    res.json({
-      routeDetails: req.route,
-    });
-  });
-  
 app.get("/api/v1/",(req, res) => { 
-    res.status(200).json(`Server running on http://${envConfig.HOST}:${envConfig.PORT}/api/v1/`)
+  return ApiSuccessResponse(res, 200, null, `Server running on http://${envConfig.HOST}:${envConfig.PORT}${urlMapping}`); 
 })
+
 app.get("/api/v1/ssr", (req, res) => {
   res.render('index', { host: envConfig.HOST, port: envConfig.PORT });
 });
 
 app.all('*', (req, res) => {
   logger.warn(`No route matched: ${req.method} ${req.originalUrl}`);
-  res.status(404).json({ status: false, message: `Route not found: ${req.method} ${req.originalUrl}` });
+  return ApiSuccessResponse(res, 404, null, `Route not found: ${req.method} ${req.originalUrl}`); 
 });
 
 app.use(sharedMiddlewares.errorHandler);

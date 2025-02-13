@@ -4,6 +4,8 @@ dotenv.config({path: `./.env.${process.env.NODE_ENV}`});
 
 const envConfig = {
     NODE_ENV : process.env.NODE_ENV || 'development',
+    BASE_URL : process.env.BASE_URL || '/api',
+    API_VERSION : process.env.API_VERSION || '/v1',
     PORT : process.env.PORT || 5000,
     HOST : process.env.HOST || 'localhost',
     CORS_ORIGIN : process.env.CORS_ORIGIN,

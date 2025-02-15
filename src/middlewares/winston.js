@@ -1,5 +1,6 @@
 import winston from 'winston';
 import os from 'os';
+import envConfig from '../env.config.js';
 
 const logger = winston.createLogger({
     level: 'info',
@@ -11,7 +12,8 @@ const logger = winston.createLogger({
     ),
     transports: [
       new winston.transports.Console(), // Log to the console
-      new winston.transports.File({ filename: 'logs/server.log' }) // Log to a file
+      ...(envConfig.NODE_ENV === 'development' ? [new winston.transports.File({ filename: 'logs/development.server.log' })] : [new winston.transports.File({ filename: 'logs/production.server.log' })]),
+
     ]
   });
 
@@ -21,13 +23,7 @@ const requestLogger = (req, res, next) => {
   // Check if device is mobile, tablet, or desktop
   let deviceType;
 
-  if (userAgentInfo.isMobile) {
-    deviceType = 'Mobile';
-  } else if (userAgentInfo.isTablet) {
-    deviceType = 'Tablet';
-  } else {
-    deviceType = 'Desktop';
-  } 
+  userAgentInfo.isMobile ? deviceType = 'Mobile' : userAgentInfo.isTablet ? deviceType = 'Tablet' : deviceType = 'Desktop';
   // After the response is finished
   res.on('finish', () => {
     const duration = Date.now() - startTime;

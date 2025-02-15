@@ -1,6 +1,5 @@
 import express from 'express';
-import userAgent from 'express-useragent';
-import bodyParser from 'body-parser';
+import userAgent from 'express-useragent'; 
 import cors from 'cors'; 
 import rateLimit from 'express-rate-limit'; 
 import path from 'path';
@@ -19,18 +18,17 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-app.use(express.json({limit:"10kb"})); 
-app.use(bodyParser.json());
-app.use(cors());
+app.use(express.json({limit:"10kb"}));
+app.use(express.static("public"));   
 app.use(userAgent.express());
 app.use(requestLogger);
-app.use(function(req, res, next) {
-    res.setHeader('Access-Control-Allow-Origin', envConfig.CORS_ORIGIN);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    res.setHeader('Access-Control-Allow-Credentials', true);
-    next();
-});
+app.use(cors({ 
+  origin: envConfig.CORS_ORIGIN, 
+  credentials: true, 
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], 
+  allowedHeaders: ['Content-Type', 'Authorization'] 
+}));
+app.options('*', cors());
 
 const { ApiError, ApiErrorResponse } = sharedUtils;
 const apiLimiter = rateLimit({
@@ -103,9 +101,8 @@ app.get("/api/v1/ssr", (req, res) => {
   res.render('index', { host: envConfig.HOST, port: envConfig.PORT });
 });
 
-app.all('*', (req, res) => {
-  logger.warn(`No route matched: ${req.method} ${req.originalUrl}`);
-  return ApiSuccessResponse(res, 404, null, `Route not found: ${req.method} ${req.originalUrl}`); 
+app.all('*', (req, res, next) => { 
+  return ApiErrorResponse(404, `Route not found: ${req.method} ${req.originalUrl}`, next); 
 });
 
 app.use(sharedMiddlewares.errorHandler);

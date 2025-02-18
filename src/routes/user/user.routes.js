@@ -88,4 +88,9 @@ const { userController } = sharedControllers;
     }
     });
 
+  //   routes.forEach(({ method, path, handler, middlewares }) => {
+  //     router[method](path, ...middlewares, handler);
+  //     console.log(`Registered Route: [${method.toUpperCase()}] ${path}`);
+  // });
+
 export default router

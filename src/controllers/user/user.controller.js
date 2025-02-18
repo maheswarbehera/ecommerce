@@ -48,6 +48,7 @@ const loginUser = asyncHandler(async(req, res, next) => {
   //     process.env.ACCESS_TOKEN_SECRET,
   //     // { expiresIn: '1h' }
   //   );
+  const loggedInUser = await User.findById(user._id).select("-password")
   const accessToken = user.generateAccessToken();
 
   res.header("Authorization", accessToken)
@@ -56,7 +57,7 @@ const loginUser = asyncHandler(async(req, res, next) => {
   user.lastLogin = Date.now()
   await user.save();
 
-  return ApiSuccessResponse(res, 200,{user, accessToken}, "User Login Successfull");
+  return ApiSuccessResponse(res, 200,{user: loggedInUser, accessToken}, "User Login Successfull");
 })
 
 const GetById = asyncHandler( async (req, res, next) => {

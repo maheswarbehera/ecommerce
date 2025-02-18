@@ -1,6 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import envConfig from "../../env.config.js";
 
 const userSchema = new Schema({
     username: {
@@ -79,7 +80,7 @@ userSchema.methods.generateAccessToken = function () {
             username: this.username,   
             role: this.role        
         },
-        process.env.ACCESS_TOKEN_SECRET,
+        envConfig.ACCESS_TOKEN_SECRET,
         {
             // expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
         }

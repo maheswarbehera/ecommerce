@@ -4,13 +4,13 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit'; 
 import path from 'path';
 import { fileURLToPath } from 'url';
-
+import fs from 'fs'; 
 import sharedRoutes from './routes/index.js';
 import sharedUtils from './utils/index.js';
 import sharedMiddlewares, { logger, requestLogger } from './middlewares/index.js'; 
 import { fileUpload } from './fileupload.js'; 
-import envConfig from './env.config.js';
-import { ApiSuccessResponse } from './utils/ApiResponse.js';
+import envConfig from './env.config.js'; 
+import readline from 'readline';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,7 +30,7 @@ app.use(cors({
 }));
 app.options('*', cors());
 
-const { ApiError, ApiErrorResponse } = sharedUtils;
+const { ApiError, ApiErrorResponse, asyncHandler, ApiSuccessResponse} = sharedUtils;
 const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minutes
   max: envConfig.RATE_LIMIT_MAX, // Limit each IP to 100 requests per windowMs
@@ -100,6 +100,29 @@ app.get("/api/v1/",(req, res) => {
 app.get("/api/v1/ssr", (req, res) => {
   res.render('index', { host: envConfig.HOST, port: envConfig.PORT });
 });
+
+app.get(`${urlMapping}/logs`, asyncHandler(async(req, res, next) => {
+  const logFile = envConfig.NODE_ENV === 'development' ? 'development.server.log' : 'production.server.log';
+  const logPath = path.resolve(__dirname, '../logs', logFile); 
+  
+  if (!fs.existsSync(logPath)) {
+    return ApiErrorResponse(404, 'Log file not found', next);
+  }
+
+  res.setHeader('Content-Type', 'text/plain');
+  const lines = [];
+  const readStream = fs.createReadStream(logPath, { encoding: 'utf-8' });
+  const rl = readline.createInterface({ input: readStream });
+
+  rl.on('line', (line) => {
+    lines.push(line);
+    if (lines.length > 50) lines.shift(); // Keep only the last 50 lines
+  });
+
+  rl.on('close', () => {
+    res.send(lines.join('\n')); // Send only the last 50 lines
+  });
+}));
 
 app.all('*', (req, res, next) => { 
   return ApiErrorResponse(404, `Route not found: ${req.method} ${req.originalUrl}`, next); 

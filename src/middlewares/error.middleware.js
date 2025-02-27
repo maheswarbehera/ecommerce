@@ -15,7 +15,7 @@ const errorHandler = (err, req, res, next) => {
 
   // In development mode, log the stack trace for debugging
   if (envConfig.NODE_ENV === 'development') {
-    logger.error(stack);
+    logger.error(`[${os.hostname}] [${statusCode}] ${req.method} ${req.originalUrl} - ${stack}`);
   }else{
     logger.error(`[${os.hostname}] [${statusCode}] ${req.method} ${req.originalUrl} - ${message}`); 
   }

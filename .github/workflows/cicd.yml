@@ -20,7 +20,7 @@ jobs:
 
           ssh -i deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             cd ecommerce
-            git pull origin main
+            git pull origin master
             npm install --production
             pm2 restart all
           EOF

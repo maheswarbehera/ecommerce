@@ -39,7 +39,31 @@ const register = async (email, username) => {
     return error;
   }
 };
+const forgotPassword = async (email, username, resetLink) => {
+  try {
+    const info = await transporter.sendMail({
+      from: envConfig.EMAIL_USER,
+      to: email,
+      subject: "Reset Password",
+      text: "Reset Password",
+      html: ` <b>Hi ${username},</b><br><br>
+      You have requested a password reset for your account. Please click on the link below to reset your password.<br><br>
+      <a href="${resetLink}">Reset Password</a><br><br>
+      <p>This link will expire in 15 minutes.</p>
+      If you did not request a password reset, please ignore this email.<br><br>
+      Best regards,<br>
+      <b>Node Server Team</b>`,
+    });
+    logger.info(`Email sent successfully , ${info.messageId}`);
+    return info;
+  } catch (error) {
+    logger.error("Failed to send email:", error);
+    return error;
+  }
+}
+
 
 export const sendMail = {
   register,
+  forgotPassword
 };

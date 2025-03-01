@@ -32,7 +32,7 @@ const userSchema = new Schema({
     },
     lastLogin: {
         type: Date,
-        default: Date.now
+        default: null
     },
     // cart: [
     //     {

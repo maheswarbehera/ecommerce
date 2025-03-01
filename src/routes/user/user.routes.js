@@ -76,6 +76,18 @@ const { userController } = sharedControllers;
           handler: userController.GetById,
           middlewares: [verifyJwt, validateObjectId]  
         },
+        {
+          method: 'post',
+          path: '/reset-password',
+          handler: userController.resetPassword,
+          middlewares: [verifyJwt]
+        },
+        {
+          method: 'post',
+          path: '/forgot-password',
+          handler: userController.forgotPassword,
+          middlewares: []
+        },
     ];
       
     routes.forEach(route => {

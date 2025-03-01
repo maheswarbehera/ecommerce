@@ -15,17 +15,19 @@ const registerUser = asyncHandler(async(req, res, next) => {
     ]
   });
 
-  if(existuser) return ApiErrorResponse( 409, "username already exists", next);
+  if(existuser) return ApiErrorResponse( 409, "Username or email already exists", next);
   // const hashedPassword = await bcrypt.hash(password, 8);
   const user = await User.create({
     username: username.toLowerCase(),
     password,
     email: email.toLowerCase()
   })
-  
-  if (user) return await sendMail.register(user.email, user.username); 
+  if (!user) {
+    return ApiErrorResponse(500, "User registration failed", next);
+  }
 
-  return ApiSuccessResponse(res, 201, user, "user created successfully");
+  ApiSuccessResponse(res, 201, user, "user created successfully");
+  sendMail.register(user.email, user.username); 
 })
 
 const loginUser = asyncHandler(async(req, res, next) => {
@@ -115,5 +117,30 @@ const clearCache = async (req,res) =>{
 
   
 }
+ 
+const resetPassword = asyncHandler(async(req, res, next) => {
+  const { oldPassword, newPassword} = req.body; 
 
-export const userController = { registerUser, loginUser, logoutUser, getCurrentUser, GetById, allUser, userRole };
+  const user = await User.findById(req.user?._id);
+  if(!user) return ApiErrorResponse(404, "User not found", next);
+
+  const isPasswordValid = await user.isPasswordCorrect(oldPassword); 
+  if (!isPasswordValid) return ApiErrorResponse( 401, "Invalid password", next);
+
+  user.password = newPassword; 
+  await user.save({validateBeforeSave: false})
+
+  return ApiSuccessResponse(res, 200, null, "Reset password successfully");
+});
+
+const forgotPassword = asyncHandler(async(req, res, next) => {
+  const { email } = req.body;
+  const user = await User.findOne({email: email.toLowerCase()}); 
+  if(!user) return ApiErrorResponse(404, "User not found", next);
+
+  sendMail.forgotPassword(user.email, user.username);
+  return ApiSuccessResponse(res, 200, null, "Reset password link sent successfully");
+
+});
+
+export const userController = { registerUser, loginUser, logoutUser, getCurrentUser, GetById, allUser, userRole, resetPassword, forgotPassword, clearCache };

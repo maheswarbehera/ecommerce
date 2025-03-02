@@ -43,6 +43,12 @@ const routes = [
         path: '/:id',
         handler: categoryController.getById,
         middlewares: [verifyJwt]
+    },
+    {
+        method: 'put',
+        path: '/:id',
+        handler: categoryController.updateCategory,
+        middlewares: [verifyJwt]
     }
 ]
 

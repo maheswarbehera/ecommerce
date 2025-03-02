@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import sharedModels from "../models/index.js"; 
+import envConfig from "../env.config.js";
 
 const { User } = sharedModels;
 const verifyJwt = async (req, res, next) => {
@@ -17,7 +18,7 @@ const verifyJwt = async (req, res, next) => {
     if (!token)
       res.status(401).json({ status: false, message: "access token required" });
 
-    const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    const decodedToken = jwt.verify(token, envConfig.ACCESS_TOKEN_SECRET);
     if (!decodedToken) {
       return res
         .status(401)

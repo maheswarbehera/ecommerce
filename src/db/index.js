@@ -13,8 +13,16 @@ const connectDb = async ()=> {
             logger.warn(`${envConfig.NODE_ENV} Environment `);
             logger.info(`[${os.hostname}] ⚙️  MongoDB connected atlas server !! DB HOST: ${connectionInstance.connection.host}, DB Name: ${connectionInstance.connection.name}`); 
         } 
+
+        mongoose.connection.on("disconnected", () => {
+            logger.error("❌ MongoDB Disconnected! Reconnecting...");
+            connectDb(); // Auto-reconnect
+        });
+        mongoose.connection.on("error", (err) => {
+            logger.error(`🚨 MongoDB Error: ${err.message}`);
+        });
     } catch (error) {
-        logger.error(`[${os.hostname}] MONGODB connection FAILED ${error}`);
+        logger.error(`[${os.hostname}] MONGODB connection FAILED ${error.name}`);
         process.exit(1);
         
     }

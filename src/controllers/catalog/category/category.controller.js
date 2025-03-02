@@ -1,6 +1,8 @@
 import sharedModels from "../../../models/index.js";
+import sharedUtils from "../../../utils/index.js";
 
 const { Category } = sharedModels;
+const { asyncHandler, ApiErrorResponse, ApiSuccessResponse } = sharedUtils;
 
 const saveOrUpdate = async (req, res) => {
     try {
@@ -42,7 +44,7 @@ const saveOrUpdate = async (req, res) => {
 
 const getAllCategories = async (req, res) => {
     try {
-        const category = await Category.find() 
+        const category = await Category.find().maxTimeMS(1000);
             return res.status(200).json({ status: true, category })
         
     } catch (error) {
@@ -86,10 +88,26 @@ const deleteCategory = async (req, res) => {
     }
 }
 
+const updateCategory = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const { name } = req.body;
+    if (!id) return ApiErrorResponse(422, "Category ID is required", next);
+    if (!name) return ApiErrorResponse(422, "Category name is required", next);
+    const excategory = await Category.findOne({ name });
+    if (excategory) return ApiErrorResponse(409, `Category ${name} already exists`, next);
+    const category = await Category.findByIdAndUpdate(id)
+    if (!category) return ApiErrorResponse(404, "Category not found", next);
+    category.name = name;
+    await category.save();
+    return ApiSuccessResponse(res, 200, {category}, "Category updated successfully");
+
+})
+
 export const categoryController = {
     // createCategory,
     getAllCategories,
     getById,
     deleteCategory,
-    saveOrUpdate
+    saveOrUpdate,
+    updateCategory
 }

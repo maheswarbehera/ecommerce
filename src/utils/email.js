@@ -27,7 +27,7 @@ const register = async (email, username) => {
     If you have any questions, our support team is here to help: <a href="mailto:support@example.com">support@example.com</a><br><br>
 
     <b>Username:</b> ${username}<br>
-    <b>Log in now:</b> <a href="http://${process.env.HOST}/api/v1/login">http://${process.env.HOST}/api/v1/login</a><br><br>
+    <b>Log in now:</b> <a href="http://${envConfig.HOST}/api/v1/login">http://${envConfig.HOST}/api/v1/login</a><br><br>
 
     Best regards,<br>
     <b>Node Server Team</b>`,

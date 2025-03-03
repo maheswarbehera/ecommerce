@@ -1,12 +1,7 @@
 import mongoose,{Schema} from 'mongoose'
 
-const orderItemSchema = new Schema({
-    orderId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Order',
-        required: true
-    },   
-    productId: {
+const orderItemSchema = new Schema({  
+    product: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Product',
         required: true
@@ -22,14 +17,15 @@ const orderItemSchema = new Schema({
     totalAmount: {
         type: Number,
         required: true
-    },
-       
-    // user: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: 'User'
-    // }
+    }, 
 }, {
     timestamps: true
 })
 
+orderItemSchema.pre('save', function (next) {
+    if (this.price >= 0 && this.quantity >= 0) {
+        this.totalAmount = this.price * this.quantity;
+    }
+    next();
+});
 export const OrderItem = mongoose.model('OrderItem', orderItemSchema)

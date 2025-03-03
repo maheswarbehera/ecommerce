@@ -11,24 +11,12 @@ const orderSchema = new Schema({
         ref: 'OrderItem',
         required: true
     }],
-    shippingAddress1: {
-        type: String,
-        required: true
-    },
-    shippingAddress2: {
-        type: String, 
-    },
-    city: {
-        type: String,
-        required: true
-    },
-    zip: {
-        type: String,
-        required: true
-    },
-    country: {
-        type: String,
-        required: true
+    shippingAddress: {
+        address1: { type: String, required: true },
+        address2: { type: String },
+        city: { type: String, required: true },
+        zip: { type: String, required: true },
+        country: { type: String, required: true },
     },
     phone: {
         type: String,
@@ -58,7 +46,8 @@ const orderSchema = new Schema({
     },
     grandTotal: {
         type: Number,
-        required: true
+        required: true,
+        default: 0
     },    
     dateOrdered: {
         type: Date,

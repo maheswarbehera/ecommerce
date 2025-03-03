@@ -2,6 +2,7 @@ import mongoose, { Schema } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import envConfig from "../../env.config.js";
+import sharedModels from "../index.js";
 
 const userSchema = new Schema({
     username: {
@@ -34,6 +35,10 @@ const userSchema = new Schema({
         type: Date,
         default: null
     },
+    uid: {
+        type: String,
+        unique: true
+    }
     // cart: [
     //     {
     //         product: {
@@ -66,6 +71,10 @@ userSchema.pre("save", async function (next) {
     if(!this.isModified("password")) return next();
 
     this.password = await bcrypt.hash(this.password, 10)
+    if (!this.uid) {
+        const { getNextConfig } = sharedModels; 
+        this.uid = await getNextConfig("User","U");
+    }
     next()
 })
 

@@ -1,6 +1,8 @@
 import mongoose, { Schema } from "mongoose"
+import sharedModels from "../../index.js"; 
 
 const categorySchema = new Schema({
+    uid: { type: String, unique: true},
     name: {
         type: String,
         required: true,
@@ -17,4 +19,11 @@ const categorySchema = new Schema({
     timestamps: true
 })
 
+categorySchema.pre("save", async function (next) {
+    if (!this.uid) {
+        const { getNextConfig } = sharedModels; 
+        this.uid = await getNextConfig("Category","CAT");
+    }
+    next();
+});
 export const Category = mongoose.model("Category", categorySchema)

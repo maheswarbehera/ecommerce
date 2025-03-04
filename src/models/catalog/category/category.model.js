@@ -20,10 +20,14 @@ const categorySchema = new Schema({
 })
 
 categorySchema.pre("save", async function (next) {
-    if (!this.uid) {
-        const { getNextConfig } = sharedModels; 
-        this.uid = await getNextConfig("Category","CAT");
+    try {
+        if (!this.uid) {
+            const { getNextConfig } = sharedModels; 
+            this.uid = await getNextConfig("Category","CAT");
+        }
+        next();
+    } catch (error) {
+        next(error)
     }
-    next();
 });
 export const Category = mongoose.model("Category", categorySchema)

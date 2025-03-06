@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Products</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; }
+    table { border-collapse: collapse; width: 80%; margin: 20px auto; }
+    th, td { border: 1px solid #000; padding: 10px; text-align: center; }
+    th { background-color: #f2f2f2; }
+    .checkbox-group { margin-bottom: 10px; }
+    button { margin: 10px; padding: 10px 15px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <img src="/favicon.ico" id="fav" width="100px">
+  <h1>Products</h1>
+
+  <div class="checkbox-group">
+    <label><input type="checkbox" id="toggle-name"> Show Product Name</label>
+    <label><input type="checkbox" id="toggle-price"> Show Price</label>
+    <label><input type="checkbox" id="toggle-sku"> Show SKU</label>
+    <label><input type="checkbox" id="toggle-stock"> Show Stock</label>
+    <button onclick="savePreferences()">Save Preferences</button>
+  </div>
+
+  <table id="product-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th class="col-name">Product Name</th>
+        <th class="col-price">Price</th>
+        <th class="col-sku">Sku</th>
+        <th class="col-stock">Stock</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="5">Loading Products...</td></tr>
+    </tbody>
+  </table>
+
+  <button onclick="downloadPDF()">Download PDF</button>
+
+  <script>
+    localStorage.setItem("authToken", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2N2M1OGNiNmZjY2IwNDUxYzcxMDk0MjQiLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6IjY3YTJkNGZhN2MyMjg4OTc0OGI0MjkwZCIsImlhdCI6MTc0MDk5OTkxMn0.k-fZlqGqxAAJ8DvCvIXLSSpQk7dTfMq-Yh---qY5ht8")
+    const authToken = localStorage.getItem("authToken"); // Retrieve stored auth token
+    async function fetchProducts() {
+      try {
+        const response = await fetch('http://localhost:8080/api/v1/product', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+            },
+        });
+        const res = await response.json();
+        const tableBody = document.querySelector("#product-table tbody");
+
+        if (res.products.length) {
+          tableBody.innerHTML = res.products.map((product, index) => 
+            `<tr>
+              <td>${index + 1}</td>
+              <td class="col-name">${product.name}</td>
+              <td class="col-price">$${product.price}</td>
+              <td class="col-sku">${product.sku}</td>
+              <td class="col-stock">${product.stock}</td>
+            </tr>`).join("");
+        } else {
+          tableBody.innerHTML = "<tr><td colspan='5'>No Products Found</td></tr>";
+        }
+      } catch (error) {
+        document.querySelector("#product-table tbody").innerHTML = "<tr><td colspan='5'>Error loading products</td></tr>";
+        console.error("Error fetching products:", error);
+      }
+    }
+
+    function toggleColumns() {
+      document.querySelectorAll(".col-name").forEach(col => col.style.display = document.getElementById("toggle-name").checked ? "" : "none");
+      document.querySelectorAll(".col-price").forEach(col => col.style.display = document.getElementById("toggle-price").checked ? "" : "none");
+      document.querySelectorAll(".col-sku").forEach(col => col.style.display = document.getElementById("toggle-sku").checked ? "" : "none");
+      document.querySelectorAll(".col-stock").forEach(col => col.style.display = document.getElementById("toggle-stock").checked ? "" : "none");
+    }
+
+    async function loadPreferences() {
+      try {
+        const response = await fetch(`http://localhost:8080/api/v1/user/preferences`,{
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+            },
+        });
+        const data = await response.json();
+        if (data.preferences) {
+          document.getElementById("toggle-name").checked = data.preferences.product.is_display_name;
+          document.getElementById("toggle-price").checked = data.preferences.product.is_display_price;
+          document.getElementById("toggle-sku").checked = data.preferences.product.is_display_sku;
+          document.getElementById("toggle-stock").checked = data.preferences.product.is_display_stock;
+        }
+        toggleColumns();
+      } catch (error) {
+        console.error("Error loading preferences:", error);
+      }
+    }
+
+    async function savePreferences() {
+      const preferences = {
+        product: {
+          is_display_name: document.getElementById("toggle-name").checked,
+          is_display_price: document.getElementById("toggle-price").checked,
+          is_display_sku: document.getElementById("toggle-sku").checked,
+          is_display_stock: document.getElementById("toggle-stock").checked,
+        }
+       
+      };
+
+      try {
+        await fetch(`http://localhost:8080/api/v1/user/preferences/save`, {
+          method: "POST", 
+          headers: { "Content-Type": "application/json",
+            'Authorization': `Bearer ${authToken}`,
+           },
+          body: JSON.stringify({ preferences })
+        });
+        alert("Preferences saved!");
+      } catch (error) {
+        console.error("Error saving preferences:", error);
+      }
+    }
+
+    document.getElementById("toggle-name").addEventListener("change", toggleColumns);
+    document.getElementById("toggle-price").addEventListener("change", toggleColumns);
+    document.getElementById("toggle-sku").addEventListener("change", toggleColumns);
+    document.getElementById("toggle-stock").addEventListener("change", toggleColumns);
+
+    
+      async function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Load the image (Replace with your actual image path or URL)
+    const logo = document.querySelector("#fav");
+
+      // Convert image to Base64 and add to PDF
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const img = new Image();
+      img.src = logo.src;
+      img.crossOrigin = "anonymous"; // Ensure this is a valid URL or Base64 string
+
+    img.onload = function () {
+      // Add logo (X, Y, Width, Height)
+      doc.addImage(img, "PNG", 90, 10, 30, 20); // Adjust as needed
+
+      // Add title below the logo
+      doc.setFontSize(18);
+      doc.text("Product List", 14, 40);
+
+      const table = document.querySelector("#product-table");
+      const headers = [];
+      const rows = [];
+
+      // Extract visible headers
+      table.querySelectorAll("thead th").forEach((th, index) => {
+        if (th.style.display !== "none") {
+          headers.push(th.textContent);
+        }
+      });
+
+      // Extract visible row data
+      table.querySelectorAll("tbody tr").forEach((row) => {
+        const rowData = [];
+        row.querySelectorAll("td").forEach((cell, i) => {
+          if (table.querySelector("thead th:nth-child(" + (i + 1) + ")").style.display !== "none") {
+            rowData.push(cell.textContent);
+          }
+        });
+        if (rowData.length) rows.push(rowData);
+      });
+
+      // Use autoTable to format the table
+      doc.autoTable({
+        head: [headers],
+        body: rows,
+        startY: 50, // Start table below logo
+        styles: { fontSize: 10, cellPadding: 3 },
+        theme: "grid"
+      });
+
+      doc.save("products.pdf");
+    };
+  } 
+
+
+    fetchProducts();
+    loadPreferences();
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+</body>
+</html>

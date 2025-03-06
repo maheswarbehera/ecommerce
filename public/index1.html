@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Categories</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      height: 100vh; 
+      margin: 0; 
+      text-align: center;
+    }
+    h1 { margin-bottom: 20px; }
+    #category-list { list-style: none; padding: 0; }
+    li { font-size: 18px; margin: 5px 0; }
+    button { margin-top: 20px; padding: 10px 15px; cursor: pointer; }
+    @media print { button { display: none; } }
+  </style>
+</head>
+<body>
+    <img src="/favicon.ico" id="fav" width="100px">
+  <h1>Categories</h1>
+  <ul id="category-list">Loading categories...</ul>
+
+  <button onclick="downloadPDF()">Download PDF</button>
+
+  <script>
+    async function fetchCategories() {
+      try {
+        const response = await fetch('/api/v1/category');
+        const res = await response.json();
+
+        const listElement = document.getElementById("category-list");
+        listElement.innerHTML = res.categories.length 
+          ? res.categories.map(cat => `<li>${cat.name}</li>`).join("") 
+          : "<li>No categories found</li>";
+      } catch (error) {
+        document.getElementById("category-list").innerHTML = "<li>Error loading categories</li>";
+        console.error("Error fetching categories:", error);
+      }
+    }
+
+    function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      doc.setFontSize(18);
+      doc.text("Category List", 10, 20);
+
+      const logo = document.querySelector("#fav");
+
+      // Convert image to Base64 and add to PDF
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const img = new Image();
+      img.src = logo.src;
+      img.crossOrigin = "anonymous";
+
+      img.onload = function () {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        const imgData = canvas.toDataURL("image/png");
+
+        // Add image to PDF (x, y, width, height)
+        doc.addImage(imgData, "PNG", 10, 30, 50, 50);
+
+        const categories = document.querySelectorAll("#category-list li");
+        let y = 90; // Adjust to avoid overlap with logo
+        categories.forEach((item, index) => {
+          doc.text(`${index + 1}. ${item.textContent}`, 10, y);
+          y += 10;
+        });
+
+        doc.save("categories.pdf");
+      };
+    }
+
+    fetchCategories();
+  </script>
+
+</body>
+</html>

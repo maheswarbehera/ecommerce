@@ -26,7 +26,7 @@ app.use(express.static("public"));
 app.use(userAgent.express());
 app.use(requestLogger);
 app.use(cors({ 
-  origin: '*', 
+  origin: envConfig.CORS_ORIGIN, 
   credentials: true, 
   methods: ['GET', 'POST', 'PUT', 'DELETE'], 
   allowedHeaders: ['Content-Type', 'Authorization'] 

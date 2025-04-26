@@ -13,6 +13,7 @@ import readline from 'readline';
 import fs from 'fs'; 
 import { fileUpload } from './fileupload.js'; 
 import { CSV } from './core/import.export.js'
+import { loginHistory } from '../logs/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +26,7 @@ app.use(express.static("public"));
 app.use(userAgent.express());
 app.use(requestLogger);
 app.use(cors({ 
-  origin: envConfig.CORS_ORIGIN, 
+  origin: '*', 
   credentials: true, 
   methods: ['GET', 'POST', 'PUT', 'DELETE'], 
   allowedHeaders: ['Content-Type', 'Authorization'] 
@@ -132,7 +133,7 @@ app.get(`${urlMapping}/logs`, asyncHandler(async(req, res, next) => {
     });
   
     rl.on('close', () => {
-      res.send(lines.join('\n')); // Send only the last 50 lines
+      res.send(lines); // Send only the last 50 lines
     });
 }));
 
@@ -154,8 +155,9 @@ app.post("/api/v1/user/preferences/save",sharedMiddlewares.verifyJwt, async (req
     res.json({ message: "Preferences saved successfully", data: updatedPref });
 });
   
-app.get("/api/v1/export-csv", CSV.exportCsv)
-app.post("/api/v1/import-csv",sharedMiddlewares.upload.single("file"), CSV.importCsv)
+app.get("/api/v1/loginHistory",sharedMiddlewares.verifyJwt, loginHistory);
+app.get("/api/v1/export-csv/:name", sharedMiddlewares.verifyJwt,CSV.exportCsv)
+app.post("/api/v1/import-csv", sharedMiddlewares.verifyJwt, sharedMiddlewares.upload.single("file"), CSV.importCsv)
 app.all('*', (req, res, next) => { 
   return ApiErrorResponse(404, `Route not found: ${req.method} ${req.originalUrl}`, next); 
 });

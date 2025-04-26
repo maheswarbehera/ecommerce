@@ -1,25 +1,33 @@
 import sharedModels from '../models/index.js'
 import fs from "fs";
 import fastCsv from "fast-csv";
-import path from "path"; 
-import { fileURLToPath } from 'url';
+import path from "path";  
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-// 📤 **Export Products to CSV**
+const capitalizeFirstLetter = (string) => {
+  if (!string) return '';
+  return string.charAt(0).toUpperCase() + string.slice(1);
+};
+
 const exportCsv = async (req, res) => {
-    try {
-      const products = await sharedModels.Product.find().lean();
-      const Repath = path.join('public', 'temp', "products.csv");
-     console.log(Repath)
-      const filePath = path.resolve(Repath)
+
+  try {
+      const name = req.params.name;
+      const capitalizedModel = capitalizeFirstLetter(name); // Capitalizing the model name
+  
+    if (!sharedModels[capitalizedModel]) {
+      return res.status(400).json({ message: "Invalid model specified" });
+    }
+
+    const products = await sharedModels[capitalizedModel].find().lean();
+      const filePath = path.resolve('public', 'temp', `${capitalizedModel}s.csv`);
+      console.log(filePath)
       const ws = fs.createWriteStream(filePath);
   
       fastCsv
         .write(products, { headers: true })
         .pipe(ws)
-        .on("finish", () => res.download(filePath, "products.csv"));
-    } catch (error) {
+        .on("finish", () => res.download(filePath, `${name}.csv`));
+    } catch (error) { 
       res.status(500).json({ message: "Error exporting CSV", error });
     }
 };
@@ -33,15 +41,30 @@ const exportCsv = async (req, res) => {
   // res.json("ol")
     fs.createReadStream(filePath)
       .pipe(fastCsv.parse({ headers: true }))
-      .on("data", (row) => {
+      .on("data",async (row) => {
+        const categories = row.category
+        ? await Promise.all(
+            row.category.split(",").map(async (c) => {
+              c = c.trim();
+              if (!c) return null; // Skip empty category names
+    
+              let categoryDoc = await sharedModels.Category.findOne({ name: c.toLowerCase() });
+              if (!categoryDoc) {
+                categoryDoc = await sharedModels.Category.create({ name: c.toLowerCase(), description: c }); // Create if not found
+              }
+              return categoryDoc._id; // Return ObjectId
+            })
+          )
+        : [];
+
         productsArray.push({
           name: row.name,
           sku: row.sku,
           description: row.description,
           price: parseFloat(row.price),
           stock: parseInt(row.stock),
-          category: [], // You can update this field dynamically
-          createdBy: "65fc92c2e89a0b1234567890", // Example user ID (update dynamically)
+          category: categories.filter((id) => id !== null),  
+          createdBy: req.user,  
         });
       })
       .on("end", async () => {

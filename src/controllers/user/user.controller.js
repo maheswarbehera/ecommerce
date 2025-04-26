@@ -1,6 +1,6 @@
 import sharedUtils from "../../utils/index.js";
 import sharedModels from "../../models/index.js";
-
+import { LoginHistory } from "../../models/user/login.model.js";
 const { User } = sharedModels;
 const { ApiSuccessResponse, ApiErrorResponse, asyncHandler, sendMail } = sharedUtils;
 
@@ -55,9 +55,29 @@ const loginUser = asyncHandler(async(req, res, next) => {
 
   res.header("Authorization", accessToken)
   // .cookie("accessToken", accessToken)
-  user.logNum += 1
-  user.lastLogin = Date.now()
-  await user.save();
+  // user.logNum += 1
+  // user.lastLogin = Date.now()
+
+  const userAgentInfo  = req.useragent; 
+  let deviceType;
+  userAgentInfo.isMobile ? deviceType = 'Mobile' : userAgentInfo.isTablet ? deviceType = 'Tablet' : deviceType = 'Desktop';
+
+   await LoginHistory.findOneAndUpdate(
+    { user: user._id },
+    {
+      $set: {
+        lastLogin: Date.now(),
+        status: true,
+        ipAddress: req.ip,
+        device: deviceType,
+        userAgent: userAgentInfo.platform,
+        browser: `${userAgentInfo.browser}/${userAgentInfo.version}`,
+      },
+      $inc: { loginAttempts: 1 },
+    },
+    { upsert: true, new: true }
+  );
+
 
   return ApiSuccessResponse(res, 200,{user: loggedInUser, accessToken}, "User Login Successfull");
 })

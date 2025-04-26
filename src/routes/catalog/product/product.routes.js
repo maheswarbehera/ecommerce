@@ -46,7 +46,14 @@ const routes = [
         path: '/filter',
         handler: productController.sortProduct,
         middlewares: [verifyJwt]
-    }
+    },
+    {
+        method: 'delete',
+        path: '/id/:id',
+        handler: productController.deleteProduct,
+        middlewares: [verifyJwt]
+    },
+
 ]
 
 routes.forEach(route => {

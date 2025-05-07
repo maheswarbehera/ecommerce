@@ -11,6 +11,7 @@ const errorHandler = (err, req, res, next) => {
   const status = err.status || false; 
   const stack = err.stack || undefined; 
   const name = err.name || 'Error';
+  const errCode = err.code || undefined;  
 
   // In development mode, log the stack trace for debugging
   const isDevelopment = envConfig.NODE_ENV === 'development';
@@ -26,6 +27,7 @@ const errorHandler = (err, req, res, next) => {
     };
     if (isDevelopment) {
       response.name = name;
+      response.errCode = errCode;
       response.stack = stack;
     }
     return res.status(statusCode).json(response);
@@ -52,7 +54,8 @@ const errorHandler = (err, req, res, next) => {
   // Mongoose validation error
   if (err.name === "ValidationError") {
     statusCode = 400;
-    message = Object.values(err.errors).map(e => e.message);
+    const errors = Object.values(err.errors).map(e => e.message);
+    message = errors.join(', ');
     return errorResponse(statusCode, message);
   }
   

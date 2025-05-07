@@ -1,6 +1,12 @@
 import winston from 'winston';
 import os from 'os';
 import envConfig from '../env.config.js';
+import fs from 'fs'
+
+const logDir = 'logs';
+if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir);
+}
 
 const logger = winston.createLogger({
     level: 'info',
@@ -13,6 +19,21 @@ const logger = winston.createLogger({
     transports: [
       new winston.transports.Console(), // Log to the console
       ...(envConfig.NODE_ENV === 'development' ? [new winston.transports.File({ filename: 'logs/development.server.log' })] : [new winston.transports.File({ filename: 'logs/production.server.log' })]),
+
+    ]
+  });
+  
+const errorLogger = winston.createLogger({
+    level: 'error',
+    format: winston.format.combine(
+      winston.format.timestamp(),
+      winston.format.printf(({ timestamp, level, message }) => {
+        return `[${timestamp}] ${level.toUpperCase()}: ${message}`;
+      })
+    ),
+    transports: [
+      new winston.transports.Console(), // Log to the console
+      ...(envConfig.NODE_ENV === 'development' ? [new winston.transports.File({ filename: `${logDir}/development.error.log` })] : [new winston.transports.File({ filename: `${logDir}/production.error.log` })]),
 
     ]
   });
@@ -37,4 +58,4 @@ const requestLogger = (req, res, next) => {
   next(); // Pass control to the next middleware
 };
 
-export  {logger, requestLogger};
+export  {logger, errorLogger, requestLogger};

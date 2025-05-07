@@ -1,8 +1,7 @@
 import envConfig from '../env.config.js'; 
 import sharedUtils from '../utils/index.js';
-import { logger } from '../middlewares/index.js';
 import os from 'os';
-
+import { errorLogger } from './winston.js';
 const { ApiError } = sharedUtils;
 
 const errorHandler = (err, req, res, next) => {
@@ -14,80 +13,88 @@ const errorHandler = (err, req, res, next) => {
   const name = err.name || 'Error';
 
   // In development mode, log the stack trace for debugging
-  if (envConfig.NODE_ENV === 'development') {
-    logger.error(`[${os.hostname}] [${statusCode}] | ${req.method} | ${req.originalUrl} - ${name} | ${message} | ${stack}`);
-  }else{
-    logger.error(`[${os.hostname}] [${statusCode}] | ${req.method} | ${req.originalUrl} - ${name} | ${message}`); 
+  const isDevelopment = envConfig.NODE_ENV === 'development';
+  const log = `[${os.hostname}] [${statusCode}] | ${req.method} | ${req.originalUrl} - ${name} | ${message}`
+
+  errorLogger.error( isDevelopment && stack ? `${log} | ${stack}` : log);
+ 
+  const errorResponse = (statusCode, message) => {
+    const response = {
+      status,
+      statusCode,
+      message,
+    };
+    if (isDevelopment) {
+      response.name = name;
+      response.stack = stack;
+    }
+    return res.status(statusCode).json(response);
   }
 
   // Check if the error is an instance of ApiError
-  if (err instanceof ApiError) {
-    return res.status(statusCode).json({
-      status, 
-      statusCode,
-      message,
-      ...(envConfig.NODE_ENV === 'development' && { name, stack }),
-    });
-  }
+  if (err instanceof ApiError) return errorResponse(statusCode, message);
+    // return res.status(statusCode).json({
+    //   status, 
+    //   statusCode,
+    //   message,
+    //   ...(envConfig.NODE_ENV === 'development' && { name, stack }),
+    // });
+
   
   // MongoServerError: E11000 duplicate key error collection
   if (err.code === 11000) {
     statusCode = 409;
     const duplicateFields = err.keyValue ? Object.entries(err.keyValue).map(([key, value]) => `${key}: ${value}`) : []; 
-    return res.status(statusCode).json({
-      status,
-      statusCode,
-      message: `Duplicate entry: ${duplicateFields.join(", ")} already exists.`,       
-      ...(envConfig.NODE_ENV === 'development' && {name, stack }),
-    });
+    message = `Duplicate entry: ${duplicateFields.join(", ")} already exists.`;
+    return errorResponse(statusCode, message);
   }
 
   // Mongoose validation error
   if (err.name === "ValidationError") {
     statusCode = 400;
-    return res.status(statusCode).json({
-      status,
-      statusCode,
-      message: Object.values(err.errors).map((val) => val.message),
-      ...(envConfig.NODE_ENV === 'development' && {name, stack }),
-    });
+    message = Object.values(err.errors).map(e => e.message);
+    return errorResponse(statusCode, message);
   }
   
   // Handle invalid MongoDB ObjectId errors
-  if (err.name === "CastError") {
-    statusCode = 400
-    return res.status(statusCode).json({
-      status,
-      statusCode,
-      message: `Invalid ${err.path}: ${err.value}`, 
-      ...(envConfig.NODE_ENV === "development" && { name, stack }),
-    });
-  } 
+  if (err.name === "CastError") return errorResponse(400, `Invalid ${err.path}: ${err.value}`);
+    
+  // JWT errors
+  if (err.name === 'TokenExpiredError') return errorResponse(401, 'Access token has expired');
+  if (err.name === 'JsonWebTokenError') return errorResponse(401, 'Invalid access token');
+  if (err.name === 'NotBeforeError') return errorResponse(401, 'Access token not active yet');
 
-  if (err.name === "TokenExpiredError") {
-    statusCode = 401;
-    return res.status(statusCode).json({ 
-      status, 
-      statusCode,
-      message: "Access token has expired",  name,
-      ...(envConfig.NODE_ENV === "development" && { name, stack }),
-    });
-  } else if (err.name === "JsonWebTokenError") {
-    statusCode = 401;
-    return res.status(statusCode).json({ 
-      status,
-      statusCode,
-      message: "Invalid access token", 
-      ...(envConfig.NODE_ENV === "development" && { name, stack }),
-    });
+  // System (Errno) Errors
+  const systemErrors = {
+    ENOENT: [404, 'File or resource not found.'],
+    EACCES: [403, 'Permission denied.'],
+    ECONNREFUSED: [503, 'Connection refused.'],
+    ETIMEDOUT: [504, 'Request timed out.'],
+    ECONNRESET: [502, 'Connection was reset.'],
+  };
+  if (err.code && systemErrors[err.code]) {
+    const [code, msg] = systemErrors[err.code];
+    return errorResponse(code, `${msg} (${err.code})`);
   }
-  // Respond to the client with an error message
-  res.status(statusCode).json({
-    status,
-    statusCode,
-    message, 
-    ...(envConfig.NODE_ENV === 'development' && { name, stack }), // Include stack trace in development
-  });
+
+  // Built-in JS error types
+  const jsErrorTypes = [
+    'SyntaxError',
+    'ReferenceError',
+    'TypeError',
+    'RangeError',
+    'URIError',
+    'EvalError',
+    'AggregateError',
+  ];
+
+  if (jsErrorTypes.includes(name)) return errorResponse(500, `Unexpected ${name}: ${message}`);
+
+  // Axios/Fetch style errors
+  if (err.isAxiosError || err.message?.includes('fetch') || err.message?.includes('network')) return errorResponse(502, `External API/network request failed: ${message}`);
+
+  // Default fallback Respond to the client with an error message
+  return errorResponse(statusCode, message);
 };
 
 export { errorHandler };

@@ -14,6 +14,7 @@ import fs from 'fs';
 import { fileUpload } from './fileupload.js'; 
 import { CSV } from './core/import.export.js'
 import { loginHistory } from '../logs/index.js';
+import auditDb from './middlewares/core/audit.middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,6 +33,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'] 
 }));
 // app.options('*', cors());
+app.use(auditDb)
 
 const { ApiError, ApiErrorResponse, asyncHandler, ApiSuccessResponse} = sharedUtils;
 const apiLimiter = rateLimit({

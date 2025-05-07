@@ -8,6 +8,7 @@ import { OrderItem } from "./order/orderItem.model.js";
 import { Role } from "./user/role.model.js"; 
 import { Permission } from "./user/permission.model.js";
 import { UserPreference } from "./preference.model.js";
+import { Audit } from "./core/audit.model.js";
 
 const configSchema = new Schema({
     schema: { type: String, required: true },   
@@ -51,7 +52,8 @@ const sharedModels = {
     Permission,
     Config,
     getNextConfig,
-    UserPreference
+    UserPreference,
+    Audit
 };
 
 export default sharedModels;

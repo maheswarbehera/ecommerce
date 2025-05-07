@@ -8,54 +8,63 @@ if (!fs.existsSync(logDir)) {
     fs.mkdirSync(logDir);
 }
 
-const logger = winston.createLogger({
-    level: 'info',
+const formatTimestamp = (timestamp) => {
+  return new Date(timestamp).toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  }) 
+};
+
+const createLogger = (level, filename, includeConsole = true) => {
+  return winston.createLogger({
+    level,
     format: winston.format.combine(
       winston.format.timestamp(),
       winston.format.printf(({ timestamp, level, message }) => {
-        return `[${timestamp}] ${level.toUpperCase()}: ${message}`;
+        return `[${formatTimestamp(timestamp)}] ${level.toUpperCase()}: ${typeof message === 'object' ? JSON.stringify(message) : message}`;
       })
     ),
     transports: [
-      new winston.transports.Console(), // Log to the console
-      ...(envConfig.NODE_ENV === 'development' ? [new winston.transports.File({ filename: 'logs/development.server.log' })] : [new winston.transports.File({ filename: 'logs/production.server.log' })]),
-
+      ...(includeConsole ? [new winston.transports.Console()] : []),
+      new winston.transports.File({ filename }),
     ]
-  });
-  
-const errorLogger = winston.createLogger({
-    level: 'error',
-    format: winston.format.combine(
-      winston.format.timestamp(),
-      winston.format.printf(({ timestamp, level, message }) => {
-        return `[${timestamp}] ${level.toUpperCase()}: ${message}`;
-      })
-    ),
-    transports: [
-      new winston.transports.Console(), // Log to the console
-      ...(envConfig.NODE_ENV === 'development' ? [new winston.transports.File({ filename: `${logDir}/development.error.log` })] : [new winston.transports.File({ filename: `${logDir}/production.error.log` })]),
 
-    ]
   });
+}
 
+// Filenames based on environment
+const env = envConfig.NODE_ENV || 'development';
+const filePrefix = `${logDir}/${env}`;
+
+// Logger instances
+const logger = createLogger('info', `${filePrefix}.server.log`);
+const auditLogger = createLogger('info', `${filePrefix}.audit.log`);
+const errorLogger = createLogger('error', `${filePrefix}.error.log`);
+
+// Request logging middleware
 const requestLogger = (req, res, next) => {
-  const startTime = Date.now();
+  const start = Date.now();
   const userAgentInfo  = req.useragent; 
   // Check if device is mobile, tablet, or desktop
-  let deviceType;
+  const deviceType =  userAgentInfo.isMobile ? 'Mobile' : userAgentInfo.isTablet ? 'Tablet' : 'Desktop';
 
-  userAgentInfo.isMobile ? deviceType = 'Mobile' : userAgentInfo.isTablet ? deviceType = 'Tablet' : deviceType = 'Desktop';
+  const logResponse = (level = 'info') => {
+    const duration = Date.now() - start;
+    const logMessage = `[${os.hostname}] [${res.statusCode}] ${req.method} | ${req.originalUrl} - ${duration}ms | ${userAgentInfo.platform} | ${userAgentInfo.browser}/${userAgentInfo.version} | ${deviceType}`;
+    logger[level](logMessage);
+  }
+
   // After the response is finished
-  res.on('finish', () => {
-    const duration = Date.now() - startTime;
-    logger.info(`[${os.hostname}] [${res.statusCode}] ${req.method} | ${req.originalUrl} - ${duration}ms | ${userAgentInfo.platform} | ${userAgentInfo.browser}/${userAgentInfo.version} | ${deviceType}`); 
-  });
-  res.on('error', () => {
-    const duration = Date.now() - startTime;
-    logger.error(`[${os.hostname}] [${res.statusCode}] ${req.method} | ${req.originalUrl} - ${duration}ms | ${userAgentInfo.platform} | ${userAgentInfo.browser}/${userAgentInfo.version} | ${deviceType}`); 
-  });
+  res.on('finish', () => logResponse('info'));
+  res.on('error', () => logResponse('error'));
 
   next(); // Pass control to the next middleware
 };
 
-export  {logger, errorLogger, requestLogger};
+export  {logger, errorLogger, auditLogger, requestLogger};

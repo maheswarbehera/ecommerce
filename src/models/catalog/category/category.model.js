@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose"
 import sharedModels from "../../index.js"; 
+import auditDbLog from "../../../utils/auditLog.js";
 
 const categorySchema = new Schema({
     uid: { type: String, unique: true},
@@ -30,4 +31,5 @@ categorySchema.pre("save", async function (next) {
         next(error)
     }
 });
+auditDbLog(categorySchema, 'Category')
 export const Category = mongoose.model("Category", categorySchema)

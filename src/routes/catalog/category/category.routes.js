@@ -1,6 +1,8 @@
 import { Router } from 'express'  
 import sharedMiddlewares from "../../../middlewares/index.js"
 import sharedControllers from "../../../controllers/index.js" 
+import { auditContextMiddleware } from '../../../middlewares/auditMiddleware.js';
+import cacheKeyGenerator from '../../../middlewares/core/cache.middleware.js';
 
 const router = Router()
 
@@ -18,13 +20,13 @@ const routes = [
         method: 'get',
         path: '/',
         handler: categoryController.getAllCategories,
-        middlewares: [verifyJwt]
+        middlewares: [verifyJwt, cacheKeyGenerator(() => 'categoryCache', 120)]
     },
     {
         method: 'post',
         path: '/saveOrUpdate',
         handler: categoryController.saveOrUpdate,
-        middlewares: [verifyJwt]
+        middlewares: [verifyJwt, auditContextMiddleware]
     },
     {
         method: 'put',

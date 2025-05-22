@@ -49,7 +49,13 @@ const routes = [
     },
     {
         method: 'delete',
-        path: '/id/:id',
+        path: '/delete/id/:id',
+        handler: productController.deleteProduct,
+        middlewares: [verifyJwt]
+    },
+    {
+        method: 'post',
+        path: '/delete',
         handler: productController.deleteProduct,
         middlewares: [verifyJwt]
     },

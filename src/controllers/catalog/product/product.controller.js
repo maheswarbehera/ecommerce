@@ -1,5 +1,6 @@
 import generateBarcode from "../../../core/barCode.js";
 import sharedModels from "../../../models/index.js";
+import sharedUtils from "../../../utils/index.js";
 
 const { Category, Product } = sharedModels;
 const createProduct = async (req, res) => {
@@ -58,20 +59,46 @@ const getAllProducts = async (req, res) => {
     const pageSize = Math.max(parseInt(req.query.pageSize) || 10, 1);
     const skip = (page - 1) * pageSize;
   
+    const sortBy = req.query.sortBy || "createdAt";
+    const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
+    const allowedSortFields = ["name", "sku", "description", "price", "stock", "category"];
+
+    const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
+    
+    // const sortObj = sortField === "category"
+    // ? { ["category.name"]: sortOrder } 
+    // : { [sortField]: sortOrder }; 
+
+    const sortObj = { [sortField]: sortOrder };
+    // if (sortField === "category") {
+    //     console.log(sortObj["category.name"], sortOrder);
+    //   sortObj["category.name"] = sortOrder;
+    // }
+
     try {
       const [totalProducts, products] = await Promise.all([
         Product.countDocuments(),
-        Product.find().populate("category").skip(skip).limit(pageSize)
+        Product.find().populate("category").sort(sortObj).skip(skip).limit(pageSize)
       ]);
-  
-      return res.status(200).json({
-        status: true,
+  return  sharedUtils.ApiSuccessResponse(res, 200, {
         products,
-        total: totalProducts,
-        currentPage: page,
-        totalPages: Math.ceil(totalProducts / pageSize),
-        message: "Products fetched successfully",
-      });
+        pagination: {
+            total: totalProducts,
+            currentPage: page,
+            pageSize,
+            totalPages: Math.ceil(totalProducts / pageSize),
+            hasNextPage: skip + pageSize < totalProducts,
+            hasPreviousPage: skip > 0,
+            nextPage: skip + pageSize < totalProducts ? page + 1 : null,
+            previousPage: skip > 0 ? page - 1 : null, 
+            sort: {
+                sortBy: sortField,
+                sortOrder: sortOrder === 1 ? "asc" : "desc"
+            }
+        }},
+        "Products fetched successfully",
+      );
+
     } catch (error) {
       console.error("Error fetching products:", error.message);
       return res.status(500).json({
@@ -86,7 +113,7 @@ const sortProduct = async (req, res) => {
     try {
         const totalProducts = await Product.countDocuments();
         let limit = Math.ceil(totalProducts/pageSize) 
-        const products = await Product.find().sort({sku: sortValue}).limit(limit);
+        const products = await Product.find().limit(limit);
         
         return res.status(200).json({ status: true, products , displayProducts: limit, totalProducts, message: "filtered Products fetched successfully" });
     } catch (error) {
@@ -142,14 +169,34 @@ const getById = async (req, res) => {
 
 const deleteProduct = async (req, res) => {
     const { id } = req.params;
-    if (!id) return res.status(422).json({ status: false, message: "Product ID is required" });
+    const { ids } = req.body
+
+    // Single delete
+  if (id) {
     try {
-        const product = await Product.findByIdAndDelete(id);
-        if (!product) return res.status(404).json({ status: false, message: "Product not found" });
-        return res.status(200).json({ status: true, message: "Product deleted successfully" });
+      const product = await Product.findByIdAndDelete(id);
+      if (!product) {
+        return res.status(404).json({ status: false, message: "Product not found" });
+      }
+      return res.status(200).json({ status: true, message: "Product deleted successfully" });
     } catch (error) {
-        return res.status(500).json({ status: false, message: "An error occurred while deleting product" });
+      return res.status(500).json({ status: false, message: "An error occurred while deleting the product" });
     }
+  }
+
+  // Bulk delete
+  if (Array.isArray(ids) && ids.length > 0) {
+    try {
+      const result = await Product.deleteMany({ _id: { $in: ids } });
+      return res.status(200).json({
+        status: true,
+        message: `${result.deletedCount} product(s) deleted successfully`
+      });
+    } catch (error) {
+      return res.status(500).json({ status: false, message: "An error occurred while deleting products" });
+    }
+  }
+    
 }
 
 export const productController = {

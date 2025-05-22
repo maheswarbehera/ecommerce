@@ -1,10 +1,11 @@
 import express from 'express';
 import userAgent from 'express-useragent'; 
+import statusMonitor from 'express-status-monitor'
 import cors from 'cors'; 
 import rateLimit from 'express-rate-limit'; 
 import path from 'path';
 import { fileURLToPath } from 'url';
-import sharedRoutes from './routes/index.js';
+import rootRouter from './routes/index.js';
 import sharedUtils from './utils/index.js';
 import sharedMiddlewares, { logger, requestLogger } from './middlewares/index.js'; 
 import envConfig from './env.config.js'; 
@@ -34,6 +35,16 @@ app.use(cors({
 }));
 // app.options('*', cors());
 app.use(auditDb)
+app.use(statusMonitor({
+    healthChecks: [{
+        protocol: 'http',
+        host: 'localhost',
+        path: '/api/v1/ssr',
+        port: '8080'
+      },
+    ]
+  }
+))
 
 const { ApiError, ApiErrorResponse, asyncHandler, ApiSuccessResponse} = sharedUtils;
 const apiLimiter = rateLimit({
@@ -48,29 +59,8 @@ const apiLimiter = rateLimit({
   },
 });
 
-// app.use("/api/v1/user", sharedRoutes.userRouter)
-// app.use("/api/v1/category", sharedRoutes.categoryRouter)
-// app.use("/api/v1/product", sharedRoutes.productRouter)
-// app.use("/api/v1/cart", sharedRoutes.cartRouter)
-// app.use("/api/v1/order", sharedRoutes.orderRouter)
-// app.use("/api/v1/role", sharedRoutes.roleRouter)
-// app.use("/api/v1/payment", sharedRoutes.paymentRouter)
 const urlMapping = `${envConfig.BASE_URL}${envConfig.API_VERSION}`;
-app.use(urlMapping, apiLimiter);
-
-const appRoutes = [
-  { path: "/user", route: sharedRoutes.userRouter },
-  { path: "/category", route: sharedRoutes.categoryRouter },
-  { path: "/product", route: sharedRoutes.productRouter },
-  { path: "/cart", route: sharedRoutes.cartRouter },
-  { path: "/order", route: sharedRoutes.orderRouter },
-  { path: "/role", route: sharedRoutes.roleRouter },
-  { path: "/payment", route: sharedRoutes.paymentRouter },
-];
-
-appRoutes.forEach(({ path, route }) => {
-  app.use(`${urlMapping}${path}`, route);
-}); 
+app.use(urlMapping, apiLimiter, rootRouter);
 
 app.get("/favicon.ico", (req, res) => {
   res.sendFile(path.resolve(__dirname, "public", "favicon.ico"));

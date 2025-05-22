@@ -1,67 +1,82 @@
 import { auditLogger } from "../middlewares/winston.js";
   
 export default function auditDbLog(schema, modelName) {
+
+    function getContext() {
+    const ctx = getAuditContext();
+    // console.log("Context from AsyncLocalStorage:", ctx);
+    return {
+      userId: ctx.userId,
+      ip: ctx.ip,
+      route: ctx.route
+    };
+  }
+
     schema.pre('save', function (next) {
-        const context = this._audit || {};
+        const context = getContext();
         const event = this.isNew ? `${modelName}_CREATED` : `${modelName}_UPDATED`;
 
         auditLogger.info({
             event,
-            userId: context.userId || 'unknown',
-            ip: context.ip || 'unknown',
-            route: context.route || 'unknown',
+            ...context,
             document: this.toObject()
         });
         next();
     });
-    schema.pre('findOneAndUpdate', async function (next) {
-        const doc = await this.model.findOne(this.getQuery());
-        const context = this.get('_audit') || {};
-        const update = this.getUpdate();
+   schema.pre('findOneAndUpdate', async function (next) {
+  try {
+    const context = getContext();
+    const query = this.getQuery();
+    const update = this.getUpdate();
+    const isUpsert = this.options.upsert;
 
-        if (doc) {
+    if (!isUpsert) {
+      const doc = await this.model.findOne(query);
+      if (doc && update && Object.keys(update).length) {
         auditLogger.info({
-            event: `${modelName}_UPDATED`,
-            userId: context.userId || 'unknown',
-            ip: context.ip || 'unknown',
-            route: context.route || 'unknown',
-            before: doc.toObject(),
-            update: update
+          event: `${modelName}_UPDATED`,
+          ...context,
+          before: doc.toObject(),
+          update
         });
-        }
-        next();
+      }
+    }
+  } catch (err) {
+    auditLogger.error({
+      event: `${modelName}_UPDATE_AUDIT_FAILED`,
+      error: err.message
     });
-    schema.post('save', function (doc) {
-        const context = this._audit || {};
-        auditLogger.info({
-            event: `${modelName}_SAVED`,
-            userId: context.userId || 'unknown',
-            ip: context.ip || 'unknown',
-            route: context.route || 'unknown',
-            document: doc.toObject()
-        });   
-    });
+  }
+
+  next();
+});
+
+
+    // schema.post('save', function (doc) {
+    //     const context = getContext();
+    //     auditLogger.info({
+    //         event: `${modelName}_SAVED`,
+    //         ...context,
+    //         document: doc.toObject()
+    //     });   
+    // });
     schema.pre('remove', function (next) {
-        const context = this._audit || {};
+        const context = getContext();
         auditLogger.info({
           event: `${modelName}_DELETED`,
-          userId: context.userId || 'unknown',
-          ip: context.ip || 'unknown',
-          route: context.route || 'unknown',
+          ...context,
           document: this.toObject()
         });
         next();
     });
       
     schema.pre('findOneAndDelete', async function (next) {
-        const context = this.get('_audit') || {};
+        const context = getContext();
         const doc = await this.model.findOne(this.getQuery());
         if (doc) {
             auditLogger.info({
-            event: `${modelName}_DELETED`,
-            userId: context.userId || 'unknown',
-            ip: context.ip || 'unknown',
-            route: context.route || 'unknown',
+                event: `${modelName}_DELETED`,
+            ...context,
             document: doc.toObject()
             });
         }
@@ -69,14 +84,12 @@ export default function auditDbLog(schema, modelName) {
     });
     
     schema.pre('deleteOne', { document: false, query: true }, async function (next) {
-        const context = this.get('_audit') || {};
+        const context = getContext();
         const doc = await this.model.findOne(this.getQuery());
         if (doc) {
             auditLogger.info({
             event: `${modelName}_DELETED`,
-            userId: context.userId || 'unknown',
-            ip: context.ip || 'unknown',
-            route: context.route || 'unknown',
+            ...context,
             document: doc.toObject()
             });
         }
@@ -85,22 +98,34 @@ export default function auditDbLog(schema, modelName) {
 
 }
 
-export function attachAuditContext(modelInstance, req) {
-    if (!req || !req.user) return;
+// export function attachAuditContext(modelInstance, req) {
+//     if (!req || !req.user) return;
   
-    const auditData = {
-      userId: req.user.id,
-      ip: req.ip,
-      route: req.originalUrl
-    };
+//     const auditData = {
+//       userId: req.user.id,
+//       ip: req.ip,
+//       route: req.originalUrl
+//     };
   
-    // Works for both Mongoose documents and queries
-    if (typeof modelInstance.set === 'function') {
-      // Query (e.g., findOneAndUpdate)
-      modelInstance.set('_audit', auditData);
-    } else {
-      // Mongoose document
-      modelInstance._audit = auditData;
-    }
+//     // Works for both Mongoose documents and queries
+//     if (typeof modelInstance.set === 'function') {
+//       // Query (e.g., findOneAndUpdate)
+//       modelInstance.set('_audit', auditData);
+//     } else {
+//       // Mongoose document
+//       modelInstance._audit = auditData;
+//     }
+// }
+  
+
+import { AsyncLocalStorage } from 'async_hooks';
+
+export const auditStorage = new AsyncLocalStorage();
+
+export function setAuditContext(context) {
+  auditStorage.enterWith(context);
 }
-  
+
+export function getAuditContext() {
+  return auditStorage.getStore() || {};
+}

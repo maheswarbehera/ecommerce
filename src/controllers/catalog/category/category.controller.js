@@ -1,4 +1,5 @@
 import sharedModels from "../../../models/index.js";
+import { clearCacheByKey } from "../../../utils/cache.js";
 import sharedUtils from "../../../utils/index.js";
 
 const { Category } = sharedModels;
@@ -24,7 +25,8 @@ const saveOrUpdate = asyncHandler(async (req, res, next) => {
         })
         message = "Category created successfully" 
     }
-
+    const getCategoryCacheKey = () => 'categoryCache';
+    clearCacheByKey(getCategoryCacheKey());
     if (!category) return ApiErrorResponse(500, `An error occurred while processing the request`, next);
     return ApiSuccessResponse(res, id ? 200 : 201, { category }, message);
 })
@@ -49,6 +51,8 @@ const deleteCategory = asyncHandler(async (req, res, next) => {
     if (!id) return ApiErrorResponse(400, "Category ID is required", next);
     const category = await Category.findByIdAndDelete(id);
     if (!category) return ApiErrorResponse(404, "Category not found", next); 
+    const getCategoryCacheKey = () => 'categoryCache';
+    clearCacheByKey(getCategoryCacheKey());
     return ApiSuccessResponse(res, 200, null, "Category deleted successfully"); 
 })
 

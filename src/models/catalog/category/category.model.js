@@ -31,5 +31,6 @@ categorySchema.pre("save", async function (next) {
         next(error)
     }
 });
-auditDbLog(categorySchema, 'Category')
+
+categorySchema.plugin(auditDbLog, 'Category')
 export const Category = mongoose.model("Category", categorySchema)

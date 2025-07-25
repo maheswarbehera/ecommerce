@@ -8,7 +8,7 @@ const envConfig = {
     API_VERSION : process.env.API_VERSION || '/v1',
     PORT : process.env.PORT || 5000,
     HOST : process.env.HOST || 'localhost',
-    CORS_ORIGIN : process.env.CORS_ORIGIN,
+    CORS_ORIGIN : process.env.CORS_ORIGIN || '*',
     ACCESS_TOKEN_SECRET : process.env.ACCESS_TOKEN_SECRET,
     ACCESS_TOKEN_EXPIRY : process.env.ACCESS_TOKEN_EXPIRY,
     DB_NAME : process.env.DB_NAME,

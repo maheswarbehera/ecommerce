@@ -29,6 +29,122 @@ const router = Router();
 //     .get('/:id',validateObjectId, userController.GetById)
 const { verifyJwt, validateObjectId } = sharedMiddlewares;
 const { userController } = sharedControllers;
+/**
+ * @swagger
+ * tags:
+ *   name: Users
+ *   description: User authentication
+ */
+
+/**
+ * @swagger
+ * /user/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - email
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *       409:
+ *         description: Username or email already exists
+ */
+
+
+/**
+ * @swagger
+ * /user/login:
+ *   post:
+ *     tags: [Users]
+ *     summary: Log in a user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: johndoe
+ *               password:
+ *                 type: string
+ *                 example: secret123
+ *     responses:
+ *       200:
+ *         description: User login successful
+ *       400:
+ *         description: Invalid username
+ *       401:
+ *         description: Invalid password
+ *       422:
+ *         description: Missing username or password
+ */
+
+
+/**
+ * @swagger
+ * /user/current-user:
+ *   get:
+ *     summary: Get current authenticated user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user details
+ */
+
+/**
+ * @swagger
+ * /user/id/{id}:
+ *   get:
+ *     summary: Get user by ID
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User object
+ */
+
+/**
+ * @swagger
+ * /user/logout:
+ *   post:
+ *     summary: Log out current user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully logged out
+ */
 
     const routes = [
         // Public routes (no auth required)

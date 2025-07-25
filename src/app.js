@@ -16,6 +16,13 @@ import { fileUpload } from './fileupload.js';
 import { CSV } from './core/import.export.js'
 import { loginHistory } from '../logs/index.js';
 import auditDb from './middlewares/core/audit.middleware.js';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger.js';
+import fileModel from './models/file.model.js';
+import multer from 'multer'; 
+import YAML from 'yamljs';
+import helmet from 'helmet';
+import morgan from 'morgan';  
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,7 +30,15 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-app.use(express.json({limit:"10kb"}));
+app.use(express.json({limit:"10kb", 
+  verify: (req, res, buf, encoding) => {
+    // buf is the raw buffer of the request body
+    // You can, for example, store it or log it
+    req.rawBody = buf.toString(encoding);
+  }
+}));
+app.use(helmet());
+app.use(morgan('dev'))
 app.use(express.static("public"));   
 app.use(userAgent.express());
 app.use(requestLogger);
@@ -62,6 +77,17 @@ const apiLimiter = rateLimit({
 const urlMapping = `${envConfig.BASE_URL}${envConfig.API_VERSION}`;
 app.use(urlMapping, apiLimiter, rootRouter);
 
+const yamlPath = path.join(__dirname, '../postman/openapi.yaml');
+// 🛡 Safely load only if file exists
+if (fs.existsSync(yamlPath)) {
+  const openapiDocument = YAML.load(yamlPath);
+  console.warn('✅ Swagger UI loaded at /api-docs');
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiDocument));
+} else {
+  console.warn('⚠️  openapi.yaml not found. Default Swagger UI mounted.');
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+}
+
 app.get("/favicon.ico", (req, res) => {
   res.sendFile(path.resolve(__dirname, "public", "favicon.ico"));
 });
@@ -70,6 +96,35 @@ app.get("/api/v1/",(req, res) => {
   return ApiSuccessResponse(res, 200, null, `Server running on http://${envConfig.HOST}:${envConfig.PORT}${urlMapping}`); 
 })
 
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+app.post('/upload-base64', upload.single('file'), async (req, res, next) => {
+  const files = req.file;
+  console.log("Raw body:", req.rawBody);
+
+  const uploadFile = new fileModel(
+    {
+      fileData: files.buffer,
+      fileType: files.mimetype,
+      fileExtension: files.originalname.split('.').pop() || '',
+      fileName: files.originalname,
+      size: files.size
+    }
+  )
+  await uploadFile.save()
+  res.json("saveUpload")
+})
+
+app.get('/getfiles/id/:id', async(req,res,next) =>{
+  const {id} = req.params
+  const getFiles = await fileModel.findById({_id: id}) 
+
+  // Convert Buffer to base64
+  const base64Data = getFiles.fileData.toString('base64');
+  const dataUri = `data:${getFiles.fileType};base64,${base64Data}`;
+  res.json(dataUri)
+})
 
 app.post('/api/v1/upload', sharedMiddlewares.upload.single("image"),fileUpload);
 // view uploaded image

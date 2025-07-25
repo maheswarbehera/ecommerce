@@ -1,0 +1,329 @@
+openapi: 3.1.0
+info:
+  title: ecommerce
+  version: 1.0.0
+servers:
+  - url: https://{{host}}
+  - url: https://ecommerce-tp2e.onrender.com
+paths:
+  /user/register:
+    post:
+      tags:
+        - Auth
+      summary: register
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+              examples:
+                - "{\r\n    \"username\": \"admin\",\r\n    \"password\": \"admin\",\r\n    \"email\": \"ffmahesh6@gmail.com\"\r\n    // \"role\": \"67a2d4fa7c22889748b4290d\"\r\n}"
+  /user/logout:
+    post:
+      tags:
+        - Auth
+      summary: logout
+  /user/login:
+    post:
+      tags:
+        - Auth
+      summary: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                username: admin
+                password: admin
+  /user/current-user:
+    get:
+      tags:
+        - Auth
+      summary: current-user
+  /user/reset-password:
+    post:
+      tags:
+        - Auth
+      summary: reset-password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                oldPassword: admin@123
+                newPassword: admin
+  /user/forgot-password:
+    post:
+      tags:
+        - Auth
+      summary: forgot-password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                email: ffmahesh6@gmail.com
+  /category:
+    get:
+      tags:
+        - Catalog > Category
+      summary: get all category
+  /category/saveOrUpdate:
+    post:
+      tags:
+        - Catalog > Category
+      summary: category/create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: electronics
+  /category/67d3a5d546988cc1a210366d:
+    get:
+      tags:
+        - Catalog > Category
+      summary: category/id
+  /category/edit/67c6dba429f09381c22a1886:
+    put:
+      tags:
+        - Catalog > Category
+      summary: '{{host}}/category/edit'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                name: women
+                description: women
+  /category/67c6d981f8476d90b775384c:
+    delete:
+      tags:
+        - Catalog > Category
+      summary: delete by id
+  /product:
+    get:
+      tags:
+        - Catalog > Product
+      summary: product
+  /product/create:
+    post:
+      tags:
+        - Catalog > Product
+      summary: product/create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                - name: Product A
+                  sku: SKU0027
+                  description: Description for Product A
+                  price: 100
+                  stock: 10
+                  category:
+                    - men
+                    - electonics
+                - name: Product B
+                  sku: SKU0082
+                  description: Description for Product B
+                  price: 150
+                  stock: 5
+                  category: Home Appliances
+  /product/category/women:
+    get:
+      tags:
+        - Catalog > Product
+      summary: product/category/Byname
+  /product/SKU002:
+    get:
+      tags:
+        - Catalog > Product
+      summary: product/sku
+  /order:
+    get:
+      tags:
+        - Order
+      summary: order
+  /order/create:
+    post:
+      tags:
+        - Order
+      summary: order/create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                orderItems:
+                  - product: 677b3eba4f8bea23ab5cad6f
+                    quantity: 2
+                  - product: 677b3eba4f8bea23ab5cad77
+                    quantity: 1
+                shippingAddress:
+                  address1: 123 Main St
+                  address2: Apt 4B
+                  city: New York
+                  zip: '10001'
+                  country: USA
+                phone: '5551234567'
+                status: Processing
+  /role/create:
+    post:
+      tags:
+        - User > Role
+      summary: role/create
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+              examples:
+                - "{\r\n      \"roleName\": \"admin\",\r\n    \"name\": \"Dashboard\",\r\n    \"code\": \"DASH\",\r\n    \"permission\": {\r\n                \"read\": true,\r\n                \"write\": true,\r\n                \"update\": false\r\n                // \"delete\": true\r\n            }\r\n}"
+  /role:
+    get:
+      tags:
+        - User > Role
+      summary: role
+  /role/permission:
+    post:
+      tags:
+        - User > Role
+      summary: role/permission
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                id: 67ab2d6cd356dd2b9473dbaf
+  /user:
+    get:
+      tags:
+        - User
+      summary: get all
+  /user/id/67a2d9e58bcd05dd2932982b:
+    get:
+      tags:
+        - User
+      summary: get user by id
+  /cart:
+    get:
+      tags:
+        - Cart
+      summary: cart
+      security:
+        - bearerAuth: []
+  /cart/add:
+    post:
+      tags:
+        - Cart
+      summary: cart/add
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                productId: 67761ef9c26549b5a42bb279
+                quantity: 2
+  /:
+    get:
+      summary: base url
+  /upload:
+    post:
+      summary: '{{host}}/upload'
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+  /api/v1/staff/12:
+    get:
+      summary: https://ecommerce-tp2e.onrender.com/api/v1/staff/12
+  /user/preferences/save:
+    post:
+      summary: '{{host}}/user/preferences/save'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                preferences:
+                  product:
+                    is_display_name: true
+                    is_display_price: true
+                    is_display_sku: true
+                    is_display_stock: false
+                  category:
+                    is_display_name: true
+                    is_display_description: true
+                  order:
+                    is_display_orderId: true
+                    is_display_status: true
+                    is_display_totalAmount: true
+  /user/preferences:
+    get:
+      summary: '{{host}}/user/preferences'
+  /import-csv:
+    post:
+      summary: '{{host}}/import-csv'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+  /export-csv/category:
+    get:
+      summary: '{{host}}/export-csv'
+  /loginHistory:
+    get:
+      summary: '{{host}}/loginHistory'
+  /logs:
+    get:
+      summary: '{{host}}/logs'
+  /err:
+    get:
+      summary: '{{host}}/err'
+  /system/cache:
+    get:
+      summary: '{{host}}/cache'
+  /system/cache/clear:
+    delete:
+      summary: '{{host}}/cache/clear'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+  - name: Catalog
+  - name: Catalog > Category
+  - name: Catalog > Product
+  - name: Order
+  - name: User
+  - name: User > Role
+  - name: Cart
